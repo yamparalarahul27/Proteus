@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Belanosima, Inter, Roboto } from "next/font/google";
+import { AgentationDevtools } from "@/components/AgentationDevtools";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,6 +36,7 @@ export default function RootLayout({
         className={`${inter.variable} ${roboto.variable} ${belanosima.variable} antialiased`}
       >
         {children}
+        <AgentationDevtools />
       </body>
     </html>
   );
