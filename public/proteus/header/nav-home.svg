@@ -1,0 +1,16 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 16.5303 16.1032" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Transfer Icon">
+<path id="Fill 7" d="M5.1478 0.473502H11.3825C13.9646 0.473502 16.0568 2.44267 16.0568 4.87284V10.7408C16.0568 13.1694 13.9646 15.1402 11.3825 15.1402H5.1478C2.56574 15.1402 0.473502 13.1694 0.473502 10.7408V4.87284C0.473502 2.44267 2.56574 0.473502 5.1478 0.473502Z" fill="url(#paint0_linear_0_29)" stroke="url(#paint1_linear_0_29)" stroke-width="0.947005"/>
+<path id="Fill 1" d="M7.3483 9.213H9.18204C9.94147 9.213 10.5568 10.0745 10.5568 11.1377V13.705C10.5568 14.7682 9.94147 15.6297 9.18204 15.6297H7.3483C6.58887 15.6297 5.9735 14.7682 5.9735 13.705V11.1377C5.9735 10.0745 6.58887 9.213 7.3483 9.213Z" fill="var(--fill-0, #F3F4F6)" stroke="var(--stroke-0, #F3F4F6)" stroke-width="0.947005"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_29" x1="8.26517" y1="0.473502" x2="8.26517" y2="15.1402" gradientUnits="userSpaceOnUse">
+<stop stop-color="#8162FF"/>
+<stop offset="1" stop-color="#5D3AE9"/>
+</linearGradient>
+<linearGradient id="paint1_linear_0_29" x1="8.26517" y1="0.473502" x2="8.26517" y2="15.1402" gradientUnits="userSpaceOnUse">
+<stop stop-color="#8162FF"/>
+<stop offset="1" stop-color="#5D3AE9"/>
+</linearGradient>
+</defs>
+</svg>
