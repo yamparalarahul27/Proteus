@@ -74,6 +74,7 @@ export default function TimelineDatePicker({
   const dragStartX = useRef(0);
   const dragStartStartDate = useRef(startDate);
   const dragStartEndDate = useRef(endDate);
+  const dragStartScroll = useRef(0);
 
   const dayCount = differenceInCalendarDays(endDate, startDate) + 1;
   const monthMarkers = useMemo(() => getMonthMarkers(), []);
@@ -165,51 +166,62 @@ export default function TimelineDatePicker({
     }
   }, []);
 
-  // ─── Drag Logic ───
-  const handleMouseDown = useCallback(
-    (type: "body" | "left" | "right", e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+  // ─── Drag Logic (mouse + touch) ───
+  const getClientX = (e: MouseEvent | TouchEvent) =>
+    "touches" in e ? e.touches[0].clientX : e.clientX;
+
+  const startDrag = useCallback(
+    (type: "body" | "left" | "right", clientX: number) => {
       dragType.current = type;
-      dragStartX.current = e.clientX;
+      dragStartX.current = clientX;
       dragStartStartDate.current = startDate;
       dragStartEndDate.current = endDate;
+      dragStartScroll.current = rulerRef.current?.scrollLeft ?? 0;
       setIsDragging(true);
     },
     [startDate, endDate]
   );
 
-  useEffect(() => {
-    if (!isDragging) return;
+  const handleMouseDown = useCallback(
+    (type: "body" | "left" | "right", e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startDrag(type, e.clientX);
+    },
+    [startDrag]
+  );
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const dx = e.clientX - dragStartX.current;
+  const handleTouchStart = useCallback(
+    (type: "body" | "left" | "right", e: React.TouchEvent) => {
+      e.stopPropagation();
+      startDrag(type, e.touches[0].clientX);
+    },
+    [startDrag]
+  );
+
+  const applyDragDelta = useCallback(
+    (clientX: number) => {
+      // On touch, the ruler may also scroll, so compensate for scroll delta
+      const scrollDelta =
+        (rulerRef.current?.scrollLeft ?? 0) - dragStartScroll.current;
+      const dx = clientX - dragStartX.current + scrollDelta;
       const dayDelta = Math.round(dx / TICK_WIDTH);
 
       if (dragType.current === "body") {
         let newStart = addDays(dragStartStartDate.current, dayDelta);
         let newEnd = addDays(dragStartEndDate.current, dayDelta);
-        // Clamp
+        const span = differenceInCalendarDays(
+          dragStartEndDate.current,
+          dragStartStartDate.current
+        );
         if (newEnd > today) {
           newEnd = today;
-          newStart = subDays(
-            today,
-            differenceInCalendarDays(
-              dragStartEndDate.current,
-              dragStartStartDate.current
-            )
-          );
+          newStart = subDays(today, span);
         }
         const earliest = indexToDay(0);
         if (newStart < earliest) {
           newStart = earliest;
-          newEnd = addDays(
-            earliest,
-            differenceInCalendarDays(
-              dragStartEndDate.current,
-              dragStartStartDate.current
-            )
-          );
+          newEnd = addDays(earliest, span);
         }
         setStartDate(newStart);
         setEndDate(newEnd);
@@ -234,21 +246,37 @@ export default function TimelineDatePicker({
         setStartDate(dragStartStartDate.current);
         setActivePreset(null);
       }
+    },
+    [today]
+  );
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if ("touches" in e) e.preventDefault(); // prevent scroll while dragging
+      applyDragDelta(getClientX(e));
     };
 
-    const handleMouseUp = () => {
+    const handleEnd = () => {
       setIsDragging(false);
       dragType.current = null;
       notifyChange(startDate, endDate);
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleEnd);
+    window.addEventListener("touchmove", handleMove, { passive: false });
+    window.addEventListener("touchend", handleEnd);
+    window.addEventListener("touchcancel", handleEnd);
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleEnd);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleEnd);
+      window.removeEventListener("touchcancel", handleEnd);
     };
-  }, [isDragging, today, startDate, endDate, notifyChange]);
+  }, [isDragging, applyDragDelta, startDate, endDate, notifyChange]);
 
   // ─── Computed positions ───
   const startIdx = dayToIndex(startDate);
@@ -283,18 +311,18 @@ export default function TimelineDatePicker({
   return (
     <div
       ref={containerRef}
-      className="proteus-panel w-full max-w-4xl rounded-xl p-5 select-none"
+      className="proteus-panel w-full max-w-4xl rounded-xl p-3 sm:p-5 select-none"
     >
       {/* Row 1: Date label + Presets */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <span className="text-sm font-medium text-gray-800">{dateLabel}</span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar shrink-0">
           {presets.map((p) => (
             <button
               key={p.key}
               onClick={() => applyPreset(p.key)}
               className={cn(
-                "px-3 py-1 text-xs rounded-full transition-all duration-200",
+                "px-3 py-1.5 text-xs rounded-full transition-all duration-200 whitespace-nowrap",
                 activePreset === p.key
                   ? "bg-white border border-gray-300 font-bold text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
@@ -384,28 +412,31 @@ export default function TimelineDatePicker({
                   : "rgb(147 197 253)",
               }}
             >
-              {/* Left resize handle */}
+              {/* Left resize handle — wider hit area on mobile */}
               <div
                 onMouseDown={(e) => handleMouseDown("left", e)}
-                className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize z-10"
+                onTouchStart={(e) => handleTouchStart("left", e)}
+                className="absolute left-0 top-0 bottom-0 w-5 sm:w-3 -ml-1 cursor-ew-resize z-10"
               />
 
               {/* Draggable body */}
               <div
                 onMouseDown={(e) => handleMouseDown("body", e)}
-                className="absolute inset-0 mx-3 flex items-center justify-center cursor-grab active:cursor-grabbing"
+                onTouchStart={(e) => handleTouchStart("body", e)}
+                className="absolute inset-0 mx-5 sm:mx-3 flex items-center justify-center cursor-grab active:cursor-grabbing"
               >
                 <span className="text-[10px] font-semibold text-gray-600 whitespace-nowrap pointer-events-none">
                   {dayCount} {dayCount === 1 ? "Day" : "Days"}
                 </span>
               </div>
 
-              {/* Right resize handle */}
+              {/* Right resize handle — larger on mobile */}
               <div
                 onMouseDown={(e) => handleMouseDown("right", e)}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 flex items-center justify-center"
+                onTouchStart={(e) => handleTouchStart("right", e)}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 flex items-center justify-center p-1"
               >
-                <div className="w-4 h-4 rounded-full bg-white border-2 border-blue-400 shadow cursor-e-resize hover:border-blue-500 hover:scale-110 transition-transform" />
+                <div className="w-5 h-5 sm:w-4 sm:h-4 rounded-full bg-white border-2 border-blue-400 shadow cursor-e-resize hover:border-blue-500 hover:scale-110 transition-transform" />
               </div>
             </div>
 
