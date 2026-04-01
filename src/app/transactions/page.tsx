@@ -6,6 +6,12 @@ import {
   type TransactionToastStage,
 } from "@/components/TransactionToast";
 import { cn } from "@/lib/utils";
+import ComponentShell from "@/components/ComponentShell";
+
+const CODE_CONTENT = `// TransactionToast component with stage selector
+// See @/components/TransactionToast for full implementation`;
+
+const PROMPT_CONTENT = `Create a transaction toast notification component that animates between different stages: processing, failed, success focus, and success settled. Include a pill-shaped stage selector bar to toggle between states.`;
 
 const stageOptions: { label: string; value: TransactionToastStage }[] = [
   { label: "Processing", value: "processing" },
@@ -18,7 +24,7 @@ export default function TransactionsPage() {
   const [stage, setStage] = useState<TransactionToastStage>("processing");
 
   return (
-    <main className="min-h-dvh bg-[#e5e7eb] px-4 py-8 sm:px-6 sm:py-10">
+    <ComponentShell title="Transaction Toast" codeContent={CODE_CONTENT} promptContent={PROMPT_CONTENT}>
       <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-5xl flex-col items-center justify-center gap-8 sm:min-h-[calc(100dvh-5rem)]">
         <TransactionToast stage={stage} />
 
@@ -45,6 +51,6 @@ export default function TransactionsPage() {
           })}
         </div>
       </div>
-    </main>
+    </ComponentShell>
   );
 }
