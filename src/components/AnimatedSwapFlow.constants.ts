@@ -1,4 +1,17 @@
 export type Scene = "form" | "review" | "pending" | "success";
+export type FormMode = "market" | "limit";
+export type AssetSymbol = "USDT" | "MATIC" | "ETH";
+export type AssetIcon = "tether" | "polygon" | "ethereum";
+export type AssetTone = "mint" | "lavender" | "slate";
+
+export type AssetOption = {
+  balance: string;
+  icon: AssetIcon;
+  name: string;
+  symbol: AssetSymbol;
+  tone: AssetTone;
+  usdPrice: number;
+};
 
 export type TimelineItem = {
   label: string;
@@ -22,6 +35,49 @@ export const RECEIVE_AMOUNT = 456.26;
 export const PENDING_SECONDS = 4;
 export const REVIEW_SECONDS = 20;
 export const PROGRESS_CIRCUMFERENCE = 678.58;
+export const defaultSlippageOptions = ["0.5%", "1.0%", "2.0%"] as const;
+export const marketTransactionTypes = [
+  "Matcha Auto",
+  "Direct Route",
+  "Gas Saver",
+] as const;
+export const limitTransactionTypes = [
+  "Post-Only",
+  "Fill or Kill",
+  "Immediate or Cancel",
+] as const;
+export const timeInForceOptions = [
+  "Good till canceled",
+  "Expires in 24 hours",
+  "Expires in 7 days",
+] as const;
+
+export const assetOptions: AssetOption[] = [
+  {
+    symbol: "USDT",
+    name: "Tether",
+    balance: "1.464",
+    icon: "tether",
+    tone: "mint",
+    usdPrice: 1,
+  },
+  {
+    symbol: "MATIC",
+    name: "Polygon",
+    balance: "42.4",
+    icon: "polygon",
+    tone: "lavender",
+    usdPrice: 0.56,
+  },
+  {
+    symbol: "ETH",
+    name: "Ethereum",
+    balance: "2.130",
+    icon: "ethereum",
+    tone: "slate",
+    usdPrice: 1730,
+  },
+];
 
 export const timelineItems: TimelineItem[] = [
   { label: "Network fee", value: "Free", accent: "green" },

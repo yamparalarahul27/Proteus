@@ -62,6 +62,12 @@ const components = [
     description: "Animated token swap interface with step-by-step flow visualization.",
     color: "#EC4899",
   },
+  {
+    href: "/avatarcreator",
+    title: "Avatar Creator",
+    description: "Split-tone avatar builder with swatch picker, shuffle action, and custom color add.",
+    color: "#9B4EE8",
+  },
 ];
 
 export default function CollectionPage() {

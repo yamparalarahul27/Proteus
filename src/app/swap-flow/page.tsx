@@ -11,7 +11,7 @@ const PROMPT_CONTENT = `Create an animated swap flow component that visualizes a
 export default function SwapFlowPage() {
   return (
     <ComponentShell title="Swap Flow" codeContent={CODE_CONTENT} promptContent={PROMPT_CONTENT}>
-      <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-5xl items-center justify-center">
+      <div className="mx-auto flex w-full max-w-5xl justify-center py-2 sm:min-h-[calc(100dvh-3rem)] sm:items-center">
         <AnimatedSwapFlow />
       </div>
     </ComponentShell>

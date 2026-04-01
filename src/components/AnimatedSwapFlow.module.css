@@ -8,7 +8,8 @@
 .frame {
   position: relative;
   width: min(100%, 560px);
-  min-height: 680px;
+  min-height: clamp(620px, calc(100dvh - 4rem), 780px);
+  height: clamp(620px, calc(100dvh - 4rem), 780px);
   overflow: hidden;
   border-radius: 32px;
   border: 1px solid rgba(255, 255, 255, 0.82);
@@ -24,9 +25,15 @@
   display: flex;
   flex-direction: column;
   padding: 18px 24px 24px;
+  overflow: visible;
+  scrollbar-width: none;
   transition:
     opacity 180ms ease-out,
     transform 220ms ease-out;
+}
+
+.scene::-webkit-scrollbar {
+  display: none;
 }
 
 .sceneActive {
@@ -135,6 +142,12 @@
   border-color: rgba(220, 212, 245, 0.8);
   background: #f3ecff;
   color: #4d4770;
+}
+
+.tokenSlate {
+  border-color: rgba(214, 222, 236, 0.85);
+  background: #eef2f8;
+  color: #495367;
 }
 
 .tokenIconWrap {
@@ -558,11 +571,14 @@
 
 @media (max-width: 900px) {
   .frame {
-    min-height: 640px;
+    min-height: min(640px, calc(100dvh - 1rem));
+    height: min(640px, calc(100dvh - 1rem));
   }
 
   .scene {
     padding: 16px 20px 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .primaryCta,
@@ -573,7 +589,8 @@
 
 @media (max-width: 680px) {
   .frame {
-    min-height: 620px;
+    min-height: min(620px, calc(100dvh - 0.75rem));
+    height: min(620px, calc(100dvh - 0.75rem));
     border-radius: 28px;
   }
 

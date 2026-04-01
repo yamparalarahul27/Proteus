@@ -1,119 +1,85 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
-  confettiPieces,
+  assetOptions,
+  defaultSlippageOptions,
   easeOutExpo,
   FORM_AMOUNT,
-  formatPending,
+  limitTransactionTypes,
+  marketTransactionTypes,
   PENDING_SECONDS,
   PROGRESS_CIRCUMFERENCE,
   RECEIVE_AMOUNT,
   REVIEW_SECONDS,
-  timelineItems,
+  timeInForceOptions,
+  type AssetOption,
+  type FormMode,
   type Scene,
 } from "./AnimatedSwapFlow.constants";
+import { FormSection, type AssetTarget } from "./AnimatedSwapFlowFormSection";
 import {
-  BackArrowIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  EthereumIcon,
-  ForwardArrowIcon,
-  GearIcon,
-  InfoIcon,
-  PolygonIcon,
-  ProtocolIcon,
-  SwapDirectionIcon,
-  SwapHorizontalIcon,
-  TetherIcon,
-} from "./AnimatedSwapFlowIcons";
+  PendingScene,
+  ReviewScene,
+  SuccessScene,
+} from "./AnimatedSwapFlowScenes";
+import {
+  calculatePayFromReceive,
+  calculateReceiveFromPay,
+  formatEditableAmount,
+  formatLimitPrice,
+  sanitizeNumericInput,
+  toNumeric,
+} from "./AnimatedSwapFlow.utils";
 import styles from "./AnimatedSwapFlow.module.css";
-import successStyles from "./AnimatedSwapFlowSuccess.module.css";
-
-function BadgeButton({
-  icon,
-  label,
-  tone,
-}: {
-  icon: ReactNode;
-  label: string;
-  tone: "mint" | "lavender";
-}) {
-  return (
-    <button
-      className={`${styles.tokenButton} ${
-        tone === "mint" ? styles.tokenMint : styles.tokenLavender
-      }`}
-      type="button"
-    >
-      <span className={styles.tokenIconWrap}>{icon}</span>
-      <span>{label}</span>
-      <ChevronDownIcon />
-    </button>
-  );
-}
-
-function Pill({
-  children,
-  onClick,
-}: {
-  children: ReactNode;
-  onClick?: () => void;
-}) {
-  return (
-    <button className={styles.neutralPill} onClick={onClick} type="button">
-      {children}
-    </button>
-  );
-}
-
-function FormLine({
-  label,
-  balance,
-  pill,
-  amount,
-  placeholder,
-  children,
-}: {
-  label: string;
-  balance: string;
-  pill: ReactNode;
-  amount: string;
-  placeholder?: boolean;
-  children?: ReactNode;
-}) {
-  return (
-    <div className={styles.formBlock}>
-      <div className={styles.rowBetween}>
-        <h3 className={styles.sectionLabel}>{label}</h3>
-        <p className={styles.balanceText}>Balance: {balance}</p>
-      </div>
-
-      <div className={styles.rowBetween}>
-        {pill}
-        {children}
-      </div>
-
-      <div className={`${styles.amountRow} ${placeholder ? styles.placeholderAmount : ""}`}>
-        <span>{amount}</span>
-        <span aria-hidden="true" className={styles.cursor} />
-      </div>
-    </div>
-  );
-}
 
 export function AnimatedSwapFlow() {
   const [scene, setScene] = useState<Scene>("form");
-  const [typedAmount, setTypedAmount] = useState("0.00");
-  const [receiveAmount, setReceiveAmount] = useState("0.00");
+  const [formMode, setFormMode] = useState<FormMode>("market");
+
+  const [payAsset, setPayAsset] = useState<AssetOption>(assetOptions[0]);
+  const [receiveAsset, setReceiveAsset] = useState<AssetOption>(assetOptions[1]);
+
+  const [typedAmount, setTypedAmount] = useState("");
+  const [receiveAmount, setReceiveAmount] = useState("");
   const [quoteReady, setQuoteReady] = useState(false);
+
   const [quoteSeconds, setQuoteSeconds] = useState(REVIEW_SECONDS);
   const [pendingSeconds, setPendingSeconds] = useState(PENDING_SECONDS);
   const [pendingProgress, setPendingProgress] = useState(1);
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [slippage, setSlippage] =
+    useState<(typeof defaultSlippageOptions)[number]>(defaultSlippageOptions[0]);
+  const [mevProtection, setMevProtection] = useState(true);
+
+  const [assetMenuTarget, setAssetMenuTarget] = useState<AssetTarget | null>(null);
+
+  const [transactionType, setTransactionType] =
+    useState<(typeof marketTransactionTypes)[number] | (typeof limitTransactionTypes)[number]>(
+      marketTransactionTypes[0],
+    );
+  const [transactionTypeOpen, setTransactionTypeOpen] = useState(false);
+
+  const [limitPrice, setLimitPrice] =
+    useState(formatLimitPrice(payAsset.usdPrice / receiveAsset.usdPrice));
+  const [timeInForce, setTimeInForce] =
+    useState<(typeof timeInForceOptions)[number]>(timeInForceOptions[0]);
+  const [timeInForceOpen, setTimeInForceOpen] = useState(false);
+
+  const frameRef = useRef<HTMLDivElement>(null);
   const timeoutsRef = useRef<number[]>([]);
   const rafsRef = useRef<number[]>([]);
+
+  const transactionTypeOptions =
+    formMode === "market" ? marketTransactionTypes : limitTransactionTypes;
+
+  function closeMenus() {
+    setSettingsOpen(false);
+    setAssetMenuTarget(null);
+    setTransactionTypeOpen(false);
+    setTimeInForceOpen(false);
+  }
 
   function clearScheduledWork() {
     for (const timeout of timeoutsRef.current) {
@@ -134,17 +100,17 @@ export function AnimatedSwapFlow() {
   }
 
   function animateValue({
-    from,
-    to,
     duration,
-    setter,
     format,
+    from,
+    setter,
+    to,
   }: {
-    from: number;
-    to: number;
     duration: number;
-    setter: (value: string) => void;
     format: (value: number) => string;
+    from: number;
+    setter: (value: string) => void;
+    to: number;
   }) {
     const startedAt = performance.now();
 
@@ -152,6 +118,7 @@ export function AnimatedSwapFlow() {
       const progress = Math.min((now - startedAt) / duration, 1);
       const eased = easeOutExpo(progress);
       const currentValue = from + (to - from) * eased;
+
       setter(format(currentValue));
 
       if (progress < 1) {
@@ -164,15 +131,77 @@ export function AnimatedSwapFlow() {
     rafsRef.current.push(raf);
   }
 
-  function formatAmount(value: number) {
-    return value % 1 === 0 ? `${value}` : `${Number(value.toFixed(2))}`;
+  function updateQuoteFromPay({
+    nextLimitPrice,
+    nextMode,
+    nextPayAmount,
+    nextPayAsset,
+    nextReceiveAsset,
+  }: {
+    nextLimitPrice: number;
+    nextMode: FormMode;
+    nextPayAmount: string;
+    nextPayAsset: AssetOption;
+    nextReceiveAsset: AssetOption;
+  }) {
+    const numericPayAmount = toNumeric(nextPayAmount);
+    if (numericPayAmount <= 0) {
+      setReceiveAmount("");
+      setQuoteReady(false);
+      return;
+    }
+
+    const nextReceiveValue = calculateReceiveFromPay({
+      payValue: numericPayAmount,
+      payAsset: nextPayAsset,
+      receiveAsset: nextReceiveAsset,
+      mode: nextMode,
+      limitPrice: nextLimitPrice,
+    });
+
+    const formattedReceive = formatEditableAmount(nextReceiveValue);
+    setReceiveAmount(formattedReceive);
+    setQuoteReady(Boolean(formattedReceive));
+  }
+
+  function updateQuoteFromReceive({
+    nextLimitPrice,
+    nextMode,
+    nextPayAsset,
+    nextReceiveAmount,
+    nextReceiveAsset,
+  }: {
+    nextLimitPrice: number;
+    nextMode: FormMode;
+    nextPayAsset: AssetOption;
+    nextReceiveAmount: string;
+    nextReceiveAsset: AssetOption;
+  }) {
+    const numericReceiveAmount = toNumeric(nextReceiveAmount);
+    if (numericReceiveAmount <= 0) {
+      setTypedAmount("");
+      setQuoteReady(false);
+      return;
+    }
+
+    const nextPayValue = calculatePayFromReceive({
+      receiveValue: numericReceiveAmount,
+      payAsset: nextPayAsset,
+      receiveAsset: nextReceiveAsset,
+      mode: nextMode,
+      limitPrice: nextLimitPrice,
+    });
+
+    const formattedPay = formatEditableAmount(nextPayValue);
+    setTypedAmount(formattedPay);
+    setQuoteReady(Boolean(formattedPay));
   }
 
   function populateQuote(payAmount: number, receiveQuote: number) {
     clearScheduledWork();
     setQuoteReady(false);
-    setTypedAmount("0.00");
-    setReceiveAmount("0.00");
+    setTypedAmount("");
+    setReceiveAmount("");
 
     schedule(80, () => {
       animateValue({
@@ -180,7 +209,7 @@ export function AnimatedSwapFlow() {
         to: payAmount,
         duration: 820,
         setter: setTypedAmount,
-        format: formatAmount,
+        format: (value) => formatEditableAmount(value, 2),
       });
 
       animateValue({
@@ -188,7 +217,7 @@ export function AnimatedSwapFlow() {
         to: receiveQuote,
         duration: 900,
         setter: setReceiveAmount,
-        format: (value) => value.toFixed(2),
+        format: (value) => formatEditableAmount(value, 2),
       });
     });
 
@@ -196,6 +225,223 @@ export function AnimatedSwapFlow() {
       setQuoteReady(true);
     });
   }
+
+  function handlePayInputChange(value: string) {
+    const nextPayInput = sanitizeNumericInput(value);
+    setTypedAmount(nextPayInput);
+
+    updateQuoteFromPay({
+      nextPayAmount: nextPayInput,
+      nextPayAsset: payAsset,
+      nextReceiveAsset: receiveAsset,
+      nextMode: formMode,
+      nextLimitPrice: toNumeric(limitPrice),
+    });
+  }
+
+  function handleReceiveInputChange(value: string) {
+    const nextReceiveInput = sanitizeNumericInput(value);
+    setReceiveAmount(nextReceiveInput);
+
+    updateQuoteFromReceive({
+      nextReceiveAmount: nextReceiveInput,
+      nextPayAsset: payAsset,
+      nextReceiveAsset: receiveAsset,
+      nextMode: formMode,
+      nextLimitPrice: toNumeric(limitPrice),
+    });
+  }
+
+  function handleFormModeChange(nextMode: FormMode) {
+    if (nextMode === formMode) {
+      return;
+    }
+
+    closeMenus();
+    setFormMode(nextMode);
+    setTransactionType(
+      nextMode === "market" ? marketTransactionTypes[0] : limitTransactionTypes[0],
+    );
+
+    const marketReferencePrice = payAsset.usdPrice / receiveAsset.usdPrice;
+    if (nextMode === "limit") {
+      setLimitPrice(formatLimitPrice(marketReferencePrice));
+    }
+
+    if (typedAmount) {
+      updateQuoteFromPay({
+        nextPayAmount: typedAmount,
+        nextPayAsset: payAsset,
+        nextReceiveAsset: receiveAsset,
+        nextMode,
+        nextLimitPrice: nextMode === "limit" ? marketReferencePrice : toNumeric(limitPrice),
+      });
+    }
+  }
+
+  function handleSwapDirection() {
+    closeMenus();
+
+    const previousPayAsset = payAsset;
+    const previousReceiveAsset = receiveAsset;
+    const previousPayAmount = typedAmount;
+    const previousReceiveAmount = receiveAmount;
+
+    setPayAsset(previousReceiveAsset);
+    setReceiveAsset(previousPayAsset);
+    setTypedAmount(previousReceiveAmount);
+    setReceiveAmount(previousPayAmount);
+
+    if (formMode === "limit") {
+      const currentLimit = toNumeric(limitPrice);
+      if (currentLimit > 0) {
+        setLimitPrice(formatLimitPrice(1 / currentLimit));
+      }
+    }
+
+    setQuoteReady(toNumeric(previousReceiveAmount) > 0 && toNumeric(previousPayAmount) > 0);
+  }
+
+  function handleAssetSelect(target: AssetTarget, selectedAsset: AssetOption) {
+    let nextPayAsset = payAsset;
+    let nextReceiveAsset = receiveAsset;
+
+    if (target === "pay") {
+      nextPayAsset = selectedAsset;
+      if (selectedAsset.symbol === receiveAsset.symbol) {
+        nextReceiveAsset = payAsset;
+      }
+    } else {
+      nextReceiveAsset = selectedAsset;
+      if (selectedAsset.symbol === payAsset.symbol) {
+        nextPayAsset = receiveAsset;
+      }
+    }
+
+    setPayAsset(nextPayAsset);
+    setReceiveAsset(nextReceiveAsset);
+    setAssetMenuTarget(null);
+
+    const nextLimitPriceValue =
+      formMode === "limit"
+        ? nextPayAsset.usdPrice / nextReceiveAsset.usdPrice
+        : toNumeric(limitPrice);
+
+    if (formMode === "limit") {
+      setLimitPrice(formatLimitPrice(nextLimitPriceValue));
+    }
+
+    if (typedAmount) {
+      updateQuoteFromPay({
+        nextPayAmount: typedAmount,
+        nextPayAsset,
+        nextReceiveAsset,
+        nextMode: formMode,
+        nextLimitPrice: nextLimitPriceValue,
+      });
+      return;
+    }
+
+    if (receiveAmount) {
+      updateQuoteFromReceive({
+        nextReceiveAmount: receiveAmount,
+        nextPayAsset,
+        nextReceiveAsset,
+        nextMode: formMode,
+        nextLimitPrice: nextLimitPriceValue,
+      });
+    }
+  }
+
+  function handleLimitPriceChange(value: string) {
+    const nextLimitInput = sanitizeNumericInput(value);
+    setLimitPrice(nextLimitInput);
+
+    const nextLimitNumeric = toNumeric(nextLimitInput);
+    if (!typedAmount) {
+      return;
+    }
+
+    updateQuoteFromPay({
+      nextPayAmount: typedAmount,
+      nextPayAsset: payAsset,
+      nextReceiveAsset: receiveAsset,
+      nextMode: "limit",
+      nextLimitPrice: nextLimitNumeric,
+    });
+  }
+
+  function handleUseMidPrice() {
+    const nextMidPrice = payAsset.usdPrice / receiveAsset.usdPrice;
+    setLimitPrice(formatLimitPrice(nextMidPrice));
+
+    if (!typedAmount) {
+      return;
+    }
+
+    updateQuoteFromPay({
+      nextPayAmount: typedAmount,
+      nextPayAsset: payAsset,
+      nextReceiveAsset: receiveAsset,
+      nextMode: "limit",
+      nextLimitPrice: nextMidPrice,
+    });
+  }
+
+  function handleToggleSettings() {
+    setSettingsOpen((previous) => !previous);
+    setAssetMenuTarget(null);
+    setTransactionTypeOpen(false);
+    setTimeInForceOpen(false);
+  }
+
+  function handleToggleAssetMenu(target: AssetTarget) {
+    setAssetMenuTarget((previous) => (previous === target ? null : target));
+    setSettingsOpen(false);
+    setTransactionTypeOpen(false);
+    setTimeInForceOpen(false);
+  }
+
+  function handleToggleTransactionType() {
+    setTransactionTypeOpen((previous) => !previous);
+    setSettingsOpen(false);
+    setTimeInForceOpen(false);
+  }
+
+  function handleToggleTimeInForce() {
+    setTimeInForceOpen((previous) => !previous);
+    setSettingsOpen(false);
+    setTransactionTypeOpen(false);
+  }
+
+  function handleReview() {
+    if (!quoteReady) {
+      return;
+    }
+
+    setQuoteSeconds(REVIEW_SECONDS);
+    setScene("review");
+  }
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!frameRef.current?.contains(event.target as Node)) {
+        closeMenus();
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    const activeScene = frameRef.current?.querySelector<HTMLElement>(`[data-scene="${scene}"]`);
+    if (activeScene) {
+      activeScene.scrollTop = 0;
+    }
+  }, [scene]);
 
   useEffect(() => {
     clearScheduledWork();
@@ -239,305 +485,99 @@ export function AnimatedSwapFlow() {
   useEffect(() => clearScheduledWork, []);
 
   const strokeOffset = PROGRESS_CIRCUMFERENCE * (1 - pendingProgress);
+  const payAmountNumeric = toNumeric(typedAmount);
+  const receiveAmountNumeric = toNumeric(receiveAmount);
 
   return (
     <div className={styles.shell}>
-      <div className={styles.frame}>
-        <section
-          aria-hidden={scene !== "form"}
-          className={`${styles.scene} ${
-            scene === "form" ? styles.sceneActive : styles.sceneHidden
-          }`}
-        >
-          <div className={styles.topBar}>
-            <div className={styles.tabRow}>
-              <button className={`${styles.tab} ${styles.tabActive}`} type="button">
-                Market
-              </button>
-              <button className={styles.tab} type="button">
-                Limit
-              </button>
-            </div>
-            <button aria-label="Settings" className={styles.iconButton} type="button">
-              <GearIcon />
-            </button>
-          </div>
+      <div className={styles.frame} ref={frameRef}>
+        <FormSection
+          assetMenuTarget={assetMenuTarget}
+          formMode={formMode}
+          isActive={scene === "form"}
+          limitPrice={limitPrice}
+          mevProtection={mevProtection}
+          onAssetMenuToggle={handleToggleAssetMenu}
+          onAssetSelect={handleAssetSelect}
+          onFillHalf={() => populateQuote(FORM_AMOUNT * 0.5, RECEIVE_AMOUNT * 0.5)}
+          onFillMax={() => populateQuote(FORM_AMOUNT, RECEIVE_AMOUNT)}
+          onFillQuarter={() => populateQuote(FORM_AMOUNT * 0.25, RECEIVE_AMOUNT * 0.25)}
+          onFormModeChange={handleFormModeChange}
+          onLimitPriceChange={handleLimitPriceChange}
+          onMevProtectionToggle={() => setMevProtection((previous) => !previous)}
+          onPayAmountChange={handlePayInputChange}
+          onReceiveAmountChange={handleReceiveInputChange}
+          onReview={handleReview}
+          onSettingsToggle={handleToggleSettings}
+          onSlippageChange={setSlippage}
+          onSwapDirection={handleSwapDirection}
+          onTimeInForceSelect={(option) => {
+            setTimeInForce(option);
+            setTimeInForceOpen(false);
+          }}
+          onTimeInForceToggle={handleToggleTimeInForce}
+          onTransactionTypeSelect={(option) => {
+            setTransactionType(
+              option as (typeof marketTransactionTypes)[number] | (typeof limitTransactionTypes)[number],
+            );
+            setTransactionTypeOpen(false);
+          }}
+          onTransactionTypeToggle={handleToggleTransactionType}
+          onUseMidPrice={handleUseMidPrice}
+          payAsset={payAsset}
+          quoteReady={quoteReady}
+          receiveAmount={receiveAmount}
+          receiveAsset={receiveAsset}
+          settingsOpen={settingsOpen}
+          slippage={slippage}
+          timeInForce={timeInForce}
+          timeInForceOpen={timeInForceOpen}
+          transactionType={transactionType}
+          transactionTypeOpen={transactionTypeOpen}
+          transactionTypeOptions={transactionTypeOptions}
+          typedAmount={typedAmount}
+        />
 
-          <div className={styles.divider} />
+        <ReviewScene
+          formMode={formMode}
+          isActive={scene === "review"}
+          onBack={() => setScene("form")}
+          onPlaceOrder={() => {
+            setPendingSeconds(PENDING_SECONDS);
+            setPendingProgress(1);
+            setScene("pending");
+          }}
+          payAmountNumeric={payAmountNumeric}
+          payAsset={payAsset}
+          quoteSeconds={quoteSeconds}
+          receiveAmount={receiveAmount}
+          receiveAmountNumeric={receiveAmountNumeric}
+          receiveAsset={receiveAsset}
+          typedAmount={typedAmount}
+        />
 
-          <FormLine
-            amount={typedAmount}
-            balance="1.464"
-            label="Pay with"
-            pill={<BadgeButton icon={<TetherIcon />} label="USDT" tone="mint" />}
-            placeholder={!quoteReady}
-          >
-            <div className={styles.quickPills}>
-              <Pill onClick={() => populateQuote(FORM_AMOUNT, RECEIVE_AMOUNT)}>MAX</Pill>
-              <Pill onClick={() => populateQuote(FORM_AMOUNT * 0.5, RECEIVE_AMOUNT * 0.5)}>
-                50%
-              </Pill>
-              <Pill onClick={() => populateQuote(FORM_AMOUNT * 0.25, RECEIVE_AMOUNT * 0.25)}>
-                25%
-              </Pill>
-            </div>
-          </FormLine>
+        <PendingScene
+          isActive={scene === "pending"}
+          pendingSeconds={pendingSeconds}
+          strokeOffset={strokeOffset}
+        />
 
-          <div className={styles.midSwapButton}>
-            <button aria-label="Swap direction" className={styles.swapButton} type="button">
-              <SwapDirectionIcon />
-            </button>
-          </div>
-
-          <div className={styles.divider} />
-
-          <FormLine
-            amount={receiveAmount}
-            balance="42.4"
-            label="You receive"
-            pill={<BadgeButton icon={<PolygonIcon />} label="MATIC" tone="lavender" />}
-            placeholder={!quoteReady}
-          />
-
-          <div className={`${styles.quoteMeta} ${quoteReady ? styles.quoteMetaVisible : ""}`}>
-            <div className={styles.metaRow}>
-              <span>Transaction type</span>
-              <span className={styles.metaValue}>
-                Matcha Auto
-                <ChevronDownIcon />
-              </span>
-            </div>
-            <div className={styles.metaRow}>
-              <span className={styles.metaLabelWithIcon}>
-                Fee (included)
-                <InfoIcon />
-              </span>
-              <span className={styles.metaFeeValue}>
-                <TetherIcon compact />
-                22.45 USDT ($22.43)
-              </span>
-            </div>
-          </div>
-
-          <div className={styles.bottomCtaWrap}>
-            <button
-              className={`${styles.primaryCta} ${
-                quoteReady ? styles.primaryCtaReady : styles.primaryCtaIdle
-              }`}
-              onClick={() => {
-                if (quoteReady) {
-                  setQuoteSeconds(REVIEW_SECONDS);
-                  setScene("review");
-                }
-              }}
-              type="button"
-            >
-              Review order
-            </button>
-          </div>
-        </section>
-
-        <section
-          aria-hidden={scene !== "review"}
-          className={`${styles.scene} ${
-            scene === "review" ? styles.sceneActive : styles.sceneHidden
-          }`}
-        >
-          <div className={styles.reviewHeader}>
-            <button
-              aria-label="Back"
-              className={styles.iconButton}
-              onClick={() => setScene("form")}
-              type="button"
-            >
-              <BackArrowIcon />
-            </button>
-            <p className={styles.reviewTitle}>Quote expires in {quoteSeconds}s</p>
-            <span className={styles.iconSpacer} />
-          </div>
-
-          <div className={styles.quoteCardsWrap}>
-            <div className={styles.reviewCard}>
-              <EthereumIcon big />
-              <p className={styles.reviewAmount}>253.63 ETH</p>
-              <p className={styles.reviewSubAmount}>$270,005.44</p>
-            </div>
-            <div className={styles.arrowBridge}>
-              <ForwardArrowIcon />
-            </div>
-            <div className={styles.reviewCard}>
-              <PolygonIcon big />
-              <p className={styles.reviewAmount}>284254.26 MATIC</p>
-              <p className={styles.reviewSubAmount}>$270,005.44</p>
-            </div>
-          </div>
-
-          <div className={styles.timelineSection}>
-            <div className={styles.timelineRail} />
-            {timelineItems.map((item) => (
-              <div className={styles.timelineRow} key={item.label}>
-                <span
-                  className={`${styles.timelineDot} ${
-                    item.last ? styles.timelineDotSolid : ""
-                  }`}
-                />
-                <span className={styles.timelineLabel}>{item.label}</span>
-                <span
-                  className={`${styles.timelineValue} ${
-                    item.accent === "green" ? styles.timelineValueGreen : ""
-                  }`}
-                >
-                  {item.value}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.infoGrid}>
-            <div className={styles.infoRow}>
-              <span>Liquidity provider</span>
-              <span className={styles.providerValue}>
-                <ProtocolIcon />
-                0x Protocol
-              </span>
-            </div>
-            <div className={styles.infoRow}>
-              <span>Rate</span>
-              <span className={styles.rateValue}>
-                <SwapHorizontalIcon />
-                1 ETH = 1562.76 MATIC ($12.64)
-              </span>
-            </div>
-            <div className={styles.infoRow}>
-              <span>Price impact</span>
-              <span>-0.47%</span>
-            </div>
-          </div>
-
-          <div className={styles.bottomCtaWrap}>
-            <button
-              className={`${styles.primaryCta} ${styles.primaryCtaReady}`}
-              onClick={() => {
-                setPendingSeconds(PENDING_SECONDS);
-                setPendingProgress(1);
-                setScene("pending");
-              }}
-              type="button"
-            >
-              Place Order
-            </button>
-          </div>
-        </section>
-
-        <section
-          aria-hidden={scene !== "pending"}
-          className={`${styles.scene} ${
-            scene === "pending" ? styles.sceneActive : styles.sceneHidden
-          }`}
-        >
-          <div className={styles.pendingStage}>
-            <div className={styles.timerWrap}>
-              <svg aria-hidden="true" className={styles.timerSvg} viewBox="0 0 240 240">
-                <circle className={styles.timerTrack} cx="120" cy="120" r="108" />
-                <circle
-                  className={styles.timerProgress}
-                  cx="120"
-                  cy="120"
-                  r="108"
-                  style={{ strokeDashoffset: strokeOffset } as CSSProperties}
-                />
-              </svg>
-              <div className={styles.timerCopy}>
-                <p>Time left</p>
-                <strong>{formatPending(pendingSeconds)}</strong>
-              </div>
-            </div>
-
-            <div className={styles.pendingCopy}>
-              <h3>Transaction pending...</h3>
-            </div>
-          </div>
-
-          <div className={styles.bottomCtaWrap}>
-            <button className={`${styles.primaryCta} ${styles.primaryCtaIdle}`} type="button">
-              See Details
-            </button>
-          </div>
-        </section>
-
-        <section
-          aria-hidden={scene !== "success"}
-          className={`${styles.scene} ${
-            scene === "success" ? styles.sceneActive : styles.sceneHidden
-          }`}
-        >
-          <div className={successStyles.successScene}>
-            <div className={successStyles.successGlow} />
-            <div aria-hidden="true" className={successStyles.confettiField}>
-              {confettiPieces.map((piece) => (
-                <span
-                  className={`${successStyles.confettiPiece} ${
-                    scene === "success" ? "" : successStyles.confettiPaused
-                  }`}
-                  key={`${piece.left}-${piece.delay}`}
-                  style={
-                    {
-                      background: piece.color,
-                      animationDelay: piece.delay,
-                      animationDuration: piece.duration,
-                      borderRadius: piece.shape,
-                      height: piece.size,
-                      left: piece.left,
-                      transform: `rotate(${piece.rotate})`,
-                      width: piece.size,
-                    } as CSSProperties
-                  }
-                />
-              ))}
-            </div>
-
-            <div className={successStyles.successBadge}>
-              <CheckIcon />
-            </div>
-
-            <div className={successStyles.successText}>
-              <h3>Transaction completed!</h3>
-              <p className={successStyles.swapSummary}>
-                <span className={successStyles.summaryToken}>
-                  <PolygonIcon compact />
-                  12,321 MATIC
-                </span>
-                <span className={successStyles.summaryConnector}>to</span>
-                <span className={successStyles.summaryToken}>
-                  <EthereumIcon compact />
-                  15,424 ETH
-                </span>
-              </p>
-              <p className={successStyles.providerCaption}>Swapped Via 0x Protocol</p>
-            </div>
-
-            <div className={successStyles.successActions}>
-              <button className={styles.secondaryCta} type="button">
-                See Details
-              </button>
-              <button
-                className={`${styles.primaryCta} ${styles.primaryCtaReady} ${successStyles.successPrimary}`}
-                onClick={() => {
-                  setTypedAmount("0.00");
-                  setReceiveAmount("0.00");
-                  setQuoteReady(false);
-                  setQuoteSeconds(REVIEW_SECONDS);
-                  setPendingSeconds(PENDING_SECONDS);
-                  setPendingProgress(1);
-                  setScene("form");
-                }}
-                type="button"
-              >
-                New Trade
-              </button>
-            </div>
-          </div>
-        </section>
+        <SuccessScene
+          isActive={scene === "success"}
+          onNewTrade={() => {
+            setTypedAmount("");
+            setReceiveAmount("");
+            setQuoteReady(false);
+            setQuoteSeconds(REVIEW_SECONDS);
+            setPendingSeconds(PENDING_SECONDS);
+            setPendingProgress(1);
+            setScene("form");
+          }}
+          payAsset={payAsset}
+          receiveAmount={receiveAmount}
+          receiveAsset={receiveAsset}
+          typedAmount={typedAmount}
+        />
       </div>
     </div>
   );

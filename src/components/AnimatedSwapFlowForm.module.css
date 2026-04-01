@@ -1,0 +1,224 @@
+.assetRow {
+  margin-top: 12px;
+  gap: 12px;
+}
+
+.amountInput {
+  width: auto;
+  min-width: 1ch;
+  max-width: 100%;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  letter-spacing: -0.015em;
+  outline: none;
+}
+
+.amountInput::placeholder {
+  color: inherit;
+  opacity: 0.46;
+}
+
+.assetSelectWrap,
+.settingsWrap,
+.txTypeWrap,
+.timeInForceWrap {
+  position: relative;
+}
+
+.assetMenu,
+.settingsMenu,
+.txTypeMenu,
+.timeInForceMenu {
+  position: absolute;
+  z-index: 8;
+  width: max-content;
+  min-width: 220px;
+  border: 1px solid #e7eaf0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow:
+    0 14px 32px rgba(15, 23, 42, 0.12),
+    0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.assetMenu,
+.txTypeMenu,
+.timeInForceMenu {
+  top: calc(100% + 8px);
+  left: 0;
+}
+
+.txTypeMenu,
+.timeInForceMenu {
+  top: auto;
+  right: 0;
+  bottom: calc(100% + 8px);
+  left: auto;
+}
+
+.settingsMenu {
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 236px;
+  padding: 12px;
+}
+
+.assetOption,
+.menuOption {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #1f2937;
+  text-align: left;
+}
+
+.assetOption:hover,
+.menuOption:hover {
+  background: #f8fafc;
+}
+
+.assetOption + .assetOption,
+.menuOption + .menuOption {
+  border-top: 1px solid #eff2f7;
+}
+
+.assetInfo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.assetLabel {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.assetName {
+  font-size: 12px;
+  color: #768092;
+}
+
+.menuCaption {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8b95a8;
+}
+
+.menuValue {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.valueChip {
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.valueChipActive {
+  border-color: #b6ccff;
+  background: #eef4ff;
+  color: #274690;
+}
+
+.menuRow {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #5f6b80;
+}
+
+.toggle {
+  position: relative;
+  height: 22px;
+  width: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: #d6deeb;
+  padding: 0;
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.22);
+  transition: transform 180ms ease;
+}
+
+.toggleActive {
+  background: #6b8dff;
+}
+
+.toggleActive::after {
+  transform: translateX(18px);
+}
+
+.dropdownTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.limitPanel {
+  margin-top: 12px;
+  border-top: 1px solid #ececf1;
+  padding-top: 10px;
+}
+
+.limitPriceInput {
+  width: 96px;
+  border: 0;
+  border-bottom: 1px dashed #c6cfdd;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #272933;
+  outline: none;
+}
+
+@media (max-width: 680px) {
+  .assetMenu,
+  .settingsMenu,
+  .txTypeMenu,
+  .timeInForceMenu {
+    min-width: 200px;
+  }
+
+  .assetRow {
+    margin-top: 10px;
+  }
+
+  .limitPriceInput {
+    width: 86px;
+  }
+}

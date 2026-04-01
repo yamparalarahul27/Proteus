@@ -12,7 +12,7 @@ const CODE_CONTENT =
   "Full source at: https://github.com/yamparalarahul27/Proteus/blob/main/src/app/navbar/page.tsx";
 
 const PROMPT_CONTENT =
-  "A responsive top-navigation bar with an app logo, icon-labeled nav links (Home, Assets, DeFi, NFT, Transactions), an inline search field, and a user avatar dropdown menu. Built with Tailwind CSS utility classes and Next.js Link routing.";
+  "A responsive top-navigation bar with an app logo, icon-labeled nav links (Home, Assets, DeFi, NFT), an inline search field, and a user avatar dropdown menu. Built with Tailwind CSS utility classes and Next.js Link routing.";
 
 /* ------------------------------------------------------------------ */
 /*  Types & Data                                                      */
@@ -30,11 +30,6 @@ const navItems: NavItem[] = [
   { href: "/assets", label: "Assets", icon: "/proteus/header/nav-assets.svg" },
   { href: "/defi", label: "DeFi", kind: "defi" },
   { href: "/nft", label: "NFT", kind: "nft" },
-  {
-    href: "/transactions",
-    label: "Transactions",
-    icon: "/proteus/header/nav-transactions.svg",
-  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -188,12 +183,6 @@ export default function NavbarPage() {
                   href="/assets"
                 >
                   Wallet overview
-                </Link>
-                <Link
-                  className="block rounded-[10px] px-3 py-2 text-[14px] text-[#1f2937] hover:bg-[#f9fafb]"
-                  href="/transactions"
-                >
-                  Recent transactions
                 </Link>
                 <Link
                   className="block rounded-[10px] px-3 py-2 text-[14px] text-[#1f2937] hover:bg-[#f9fafb]"
