@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, Code, MessageSquare } from "lucide-react";
+import Link from "next/link";
+import { Calendar, Code, MessageSquare, Undo2 } from "lucide-react";
 import TimelineDatePicker from "@/components/TimelineDatePicker";
 import BottomSheet from "@/components/BottomSheet";
 import { cn } from "@/lib/utils";
@@ -85,12 +86,70 @@ export default function DatePickerPage() {
   const [sheetOpen, setSheetOpen] = useState<"code" | "prompt" | null>(null);
 
   return (
-    <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-8 gap-5">
-      {/* Title + Credits */}
-      <div className="text-center space-y-1.5">
+    <div className="min-h-screen bg-[var(--background)] flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-30 bg-[var(--background)] border-b border-gray-200/60 px-4 py-3">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <Undo2 size={16} />
+          <span>Back</span>
+        </Link>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 gap-5">
+        {/* Title */}
         <h1 className="text-xl font-semibold text-gray-800">
           Date Picker Component
         </h1>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setSheetOpen("code")}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 shadow-sm hover:border-gray-300 hover:shadow transition-all"
+          >
+            <Code size={14} />
+            Copy Code (NextJs)
+          </button>
+          <button
+            onClick={() => setIsVisible((v) => !v)}
+            className={cn(
+              "p-2.5 rounded-xl transition-all duration-200",
+              isVisible
+                ? "bg-white border border-gray-300 shadow-sm text-gray-800"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+            )}
+            aria-label="Toggle date picker"
+          >
+            <Calendar size={18} />
+          </button>
+          <button
+            onClick={() => setSheetOpen("prompt")}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 shadow-sm hover:border-gray-300 hover:shadow transition-all"
+          >
+            <MessageSquare size={14} />
+            Copy Prompt
+          </button>
+        </div>
+
+        {/* Date Picker Component */}
+        <div
+          className={cn(
+            "w-full max-w-4xl transition-all duration-300 ease-in-out origin-top",
+            isVisible
+              ? "opacity-100 scale-100 max-h-[600px]"
+              : "opacity-0 scale-95 max-h-0 overflow-hidden pointer-events-none"
+          )}
+        >
+          <TimelineDatePicker />
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200/60 px-4 py-4 text-center">
         <p className="text-xs text-gray-400">
           Inspired and combined engineered from the work of{" "}
           <a
@@ -111,49 +170,7 @@ export default function DatePickerPage() {
             @kenneth_skovhus
           </a>
         </p>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setSheetOpen("code")}
-          className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 shadow-sm hover:border-gray-300 hover:shadow transition-all"
-        >
-          <Code size={14} />
-          Copy Code (NextJs)
-        </button>
-        <button
-          onClick={() => setIsVisible((v) => !v)}
-          className={cn(
-            "p-2.5 rounded-xl transition-all duration-200",
-            isVisible
-              ? "bg-white border border-gray-300 shadow-sm text-gray-800"
-              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-          )}
-          aria-label="Toggle date picker"
-        >
-          <Calendar size={18} />
-        </button>
-        <button
-          onClick={() => setSheetOpen("prompt")}
-          className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 shadow-sm hover:border-gray-300 hover:shadow transition-all"
-        >
-          <MessageSquare size={14} />
-          Copy Prompt
-        </button>
-      </div>
-
-      {/* Date Picker Component */}
-      <div
-        className={cn(
-          "w-full max-w-4xl transition-all duration-300 ease-in-out origin-top",
-          isVisible
-            ? "opacity-100 scale-100 max-h-[600px]"
-            : "opacity-0 scale-95 max-h-0 overflow-hidden pointer-events-none"
-        )}
-      >
-        <TimelineDatePicker />
-      </div>
+      </footer>
 
       {/* Bottom Sheets */}
       <BottomSheet
