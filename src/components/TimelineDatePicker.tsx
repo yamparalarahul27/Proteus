@@ -3,21 +3,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   addDays,
+  addMonths,
   differenceInCalendarDays,
   endOfMonth,
+  endOfYear,
   format,
+  getDay,
   isToday,
   startOfMonth,
+  startOfYear,
   subDays,
   subMonths,
 } from "date-fns";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  parseDateInput,
+  type Granularity,
+} from "@/lib/parseDateInput";
 
 type Preset = "thisMonth" | "7d" | "30d" | "90d" | null;
 
-const TICK_WIDTH = 4; // px per day
-const VISIBLE_DAYS = 180; // ~6 months visible in the ruler
-const TOTAL_DAYS = 365; // 1 year of timeline data
+const TICK_WIDTH = 4;
+const TOTAL_DAYS = 365;
 const RULER_WIDTH = TOTAL_DAYS * TICK_WIDTH;
 
 function getToday() {
@@ -26,7 +34,6 @@ function getToday() {
   return d;
 }
 
-/** The rightmost date on the ruler (today). Day index 0 = TOTAL_DAYS ago. */
 function dayToIndex(day: Date): number {
   const today = getToday();
   const diff = differenceInCalendarDays(today, day);
@@ -38,11 +45,9 @@ function indexToDay(index: number): Date {
   return subDays(today, TOTAL_DAYS - index);
 }
 
-/** Generate month boundary markers for the ruler. */
 function getMonthMarkers() {
   const today = getToday();
   const markers: { label: string; index: number; date: Date }[] = [];
-  // Go back ~13 months to cover the full ruler
   for (let i = 13; i >= 0; i--) {
     const d = startOfMonth(subMonths(today, i));
     const idx = dayToIndex(d);
@@ -52,6 +57,326 @@ function getMonthMarkers() {
   }
   return markers;
 }
+
+const GRANULARITY_TABS: { key: Granularity; label: string }[] = [
+  { key: "day", label: "Day" },
+  { key: "month", label: "Month" },
+  { key: "quarter", label: "Quarter" },
+  { key: "half-year", label: "Half-year" },
+  { key: "year", label: "Year" },
+];
+
+// ─── Granularity Panels ───
+
+function YearPanel({
+  today,
+  startDate,
+  endDate,
+  onSelect,
+}: {
+  today: Date;
+  startDate: Date;
+  endDate: Date;
+  onSelect: (s: Date, e: Date) => void;
+}) {
+  const currentYear = today.getFullYear();
+  const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
+
+  return (
+    <div className="flex flex-wrap gap-2 py-3">
+      {years.map((y) => {
+        const s = new Date(y, 0, 1);
+        const e = endOfYear(s);
+        const isSelected =
+          startDate.getFullYear() === y &&
+          startOfYear(startDate).getTime() === s.getTime() &&
+          endDate.getTime() === (e > today ? today : e).getTime();
+        return (
+          <button
+            key={y}
+            onClick={() => onSelect(s, e > today ? today : e)}
+            className={cn(
+              "px-4 py-2 rounded-lg text-sm transition-all",
+              isSelected
+                ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
+                : "border border-gray-200 text-gray-600 hover:border-gray-400"
+            )}
+          >
+            {y}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function HalfYearPanel({
+  today,
+  startDate,
+  endDate,
+  onSelect,
+}: {
+  today: Date;
+  startDate: Date;
+  endDate: Date;
+  onSelect: (s: Date, e: Date) => void;
+}) {
+  const currentYear = today.getFullYear();
+  const years = [currentYear - 1, currentYear, currentYear + 1];
+
+  return (
+    <div className="py-3 space-y-3">
+      {years.map((y) => (
+        <div key={y}>
+          <div className="text-xs text-gray-400 mb-1.5">{y}</div>
+          <div className="flex gap-2">
+            {[1, 2].map((h) => {
+              const s = h === 1 ? new Date(y, 0, 1) : new Date(y, 6, 1);
+              const e =
+                h === 1
+                  ? endOfMonth(new Date(y, 5, 1))
+                  : endOfMonth(new Date(y, 11, 1));
+              const clampedEnd = e > today ? today : e;
+              const isFuture = s > today;
+              const isSelected =
+                startDate.getTime() === s.getTime() &&
+                endDate.getTime() === clampedEnd.getTime();
+              return (
+                <button
+                  key={h}
+                  disabled={isFuture}
+                  onClick={() => onSelect(s, clampedEnd)}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm transition-all",
+                    isFuture && "opacity-40 cursor-not-allowed",
+                    isSelected
+                      ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
+                      : "border border-gray-200 text-gray-600 hover:border-gray-400"
+                  )}
+                >
+                  H{h}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function QuarterPanel({
+  today,
+  startDate,
+  endDate,
+  onSelect,
+}: {
+  today: Date;
+  startDate: Date;
+  endDate: Date;
+  onSelect: (s: Date, e: Date) => void;
+}) {
+  const currentYear = today.getFullYear();
+  const years = [currentYear - 1, currentYear, currentYear + 1];
+
+  return (
+    <div className="py-3 space-y-3">
+      {years.map((y) => (
+        <div key={y}>
+          <div className="text-xs text-gray-400 mb-1.5">{y}</div>
+          <div className="grid grid-cols-4 gap-2">
+            {[1, 2, 3, 4].map((q) => {
+              const startMonth = (q - 1) * 3;
+              const s = new Date(y, startMonth, 1);
+              const e = endOfMonth(new Date(y, startMonth + 2, 1));
+              const clampedEnd = e > today ? today : e;
+              const isFuture = s > today;
+              const isSelected =
+                startDate.getTime() === s.getTime() &&
+                endDate.getTime() === clampedEnd.getTime();
+              return (
+                <button
+                  key={q}
+                  disabled={isFuture}
+                  onClick={() => onSelect(s, clampedEnd)}
+                  className={cn(
+                    "px-3 py-2 rounded-lg text-sm transition-all",
+                    isFuture && "opacity-40 cursor-not-allowed",
+                    isSelected
+                      ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
+                      : "border border-gray-200 text-gray-600 hover:border-gray-400"
+                  )}
+                >
+                  Q{q}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MonthPanel({
+  today,
+  startDate,
+  endDate,
+  onSelect,
+}: {
+  today: Date;
+  startDate: Date;
+  endDate: Date;
+  onSelect: (s: Date, e: Date) => void;
+}) {
+  const currentYear = today.getFullYear();
+  const years = [currentYear - 1, currentYear];
+  const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+
+  return (
+    <div className="py-3 space-y-3">
+      {years.map((y) => (
+        <div key={y}>
+          <div className="text-xs text-gray-400 mb-1.5">{y}</div>
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+            {monthNames.map((name, i) => {
+              const s = new Date(y, i, 1);
+              const e = endOfMonth(s);
+              const clampedEnd = e > today ? today : e;
+              const isFuture = s > today;
+              const isSelected =
+                startDate.getTime() === s.getTime() &&
+                endDate.getTime() === clampedEnd.getTime();
+              return (
+                <button
+                  key={i}
+                  disabled={isFuture}
+                  onClick={() => onSelect(s, clampedEnd)}
+                  className={cn(
+                    "px-2 py-1.5 rounded-lg text-sm transition-all",
+                    isFuture && "opacity-40 cursor-not-allowed",
+                    isSelected
+                      ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
+                      : "border border-gray-200 text-gray-600 hover:border-gray-400"
+                  )}
+                >
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DayPanel({
+  today,
+  startDate,
+  onSelect,
+}: {
+  today: Date;
+  startDate: Date;
+  onSelect: (s: Date, e: Date) => void;
+}) {
+  const [viewMonth, setViewMonth] = useState(startDate);
+  const monthStart = startOfMonth(viewMonth);
+  const monthEnd = endOfMonth(viewMonth);
+  const startDay = getDay(monthStart);
+  const daysInMonth = monthEnd.getDate();
+
+  const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+  // Build the grid: leading blanks + days
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < startDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  return (
+    <div className="py-3">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-gray-700">
+          {format(viewMonth, "MMMM yyyy")}
+        </span>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setViewMonth((v) => subMonths(v, 1))}
+            className="p-1 rounded hover:bg-gray-100 text-gray-500"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            onClick={() => setViewMonth((v) => addMonths(v, 1))}
+            className="p-1 rounded hover:bg-gray-100 text-gray-500"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Weekday headers */}
+      <div className="grid grid-cols-7 gap-0 mb-1">
+        {weekdays.map((wd) => (
+          <div
+            key={wd}
+            className="text-center text-[11px] font-medium text-gray-400 py-1"
+          >
+            {wd}
+          </div>
+        ))}
+      </div>
+
+      {/* Day cells */}
+      <div className="grid grid-cols-7 gap-0">
+        {cells.map((day, i) => {
+          if (day === null) {
+            return <div key={`blank-${i}`} className="h-9" />;
+          }
+          const date = new Date(
+            viewMonth.getFullYear(),
+            viewMonth.getMonth(),
+            day
+          );
+          date.setHours(0, 0, 0, 0);
+          const isFuture = date > today;
+          const isSelected = startDate.getTime() === date.getTime();
+          const isTodayDate = isToday(date);
+          const dayOfWeek = (startDay + day - 1) % 7;
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+          return (
+            <button
+              key={day}
+              disabled={isFuture}
+              onClick={() => onSelect(date, date)}
+              className={cn(
+                "h-9 flex items-center justify-center rounded-full text-sm transition-all",
+                isFuture && "opacity-30 cursor-not-allowed",
+                isSelected &&
+                  "bg-blue-500 text-white font-semibold",
+                !isSelected && isTodayDate &&
+                  "ring-2 ring-blue-300 ring-inset font-semibold text-blue-600",
+                !isSelected && !isFuture && !isTodayDate && isWeekend &&
+                  "text-gray-400 hover:bg-gray-100",
+                !isSelected && !isFuture && !isTodayDate && !isWeekend &&
+                  "text-gray-700 hover:bg-gray-100"
+              )}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───
 
 export default function TimelineDatePicker({
   onChange,
@@ -65,11 +390,15 @@ export default function TimelineDatePicker({
   const [activePreset, setActivePreset] = useState<Preset>("thisMonth");
   const [isDragging, setIsDragging] = useState(false);
 
-  // Viewport: the scroll offset in px from the right end of the ruler
+  // New state for text input + granularity
+  const [inputValue, setInputValue] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  const [activeGranularity, setActiveGranularity] =
+    useState<Granularity | null>(null);
+
   const rulerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Drag state refs (avoid re-renders during drag)
   const dragType = useRef<"body" | "left" | "right" | null>(null);
   const dragStartX = useRef(0);
   const dragStartStartDate = useRef(startDate);
@@ -79,11 +408,12 @@ export default function TimelineDatePicker({
   const dayCount = differenceInCalendarDays(endDate, startDate) + 1;
   const monthMarkers = useMemo(() => getMonthMarkers(), []);
 
-  // Scroll so that the selection is visible on mount
+  // Scroll so selection is visible on mount
   useEffect(() => {
     if (rulerRef.current) {
       const endIdx = dayToIndex(endDate);
-      const scrollTo = endIdx * TICK_WIDTH - (rulerRef.current.clientWidth - 80);
+      const scrollTo =
+        endIdx * TICK_WIDTH - (rulerRef.current.clientWidth - 80);
       rulerRef.current.scrollLeft = Math.max(0, scrollTo);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,12 +426,42 @@ export default function TimelineDatePicker({
     [onChange]
   );
 
+  const scrollToRange = useCallback((s: Date, e: Date) => {
+    requestAnimationFrame(() => {
+      if (rulerRef.current) {
+        const midIdx =
+          dayToIndex(s) + differenceInCalendarDays(e, s) / 2;
+        const scrollTo =
+          midIdx * TICK_WIDTH - rulerRef.current.clientWidth / 2;
+        rulerRef.current.scrollLeft = Math.max(0, scrollTo);
+      }
+    });
+  }, []);
+
+  // ─── Apply a date range from any source ───
+  const applyRange = useCallback(
+    (s: Date, e: Date, granularity?: Granularity) => {
+      const clampedEnd = e > today ? today : e;
+      setStartDate(s);
+      setEndDate(clampedEnd);
+      setActivePreset(null);
+      if (granularity !== undefined) {
+        setActiveGranularity(granularity);
+      }
+      notifyChange(s, clampedEnd);
+      scrollToRange(s, clampedEnd);
+    },
+    [today, notifyChange, scrollToRange]
+  );
+
   // ─── Preset Handlers ───
   const applyPreset = useCallback(
     (preset: Preset) => {
       setActivePreset(preset);
+      setActiveGranularity(null);
+      setInputValue("");
       let s: Date;
-      let e: Date = today;
+      const e: Date = today;
       switch (preset) {
         case "thisMonth":
           s = startOfMonth(today);
@@ -121,17 +481,9 @@ export default function TimelineDatePicker({
       setStartDate(s);
       setEndDate(e);
       notifyChange(s, e);
-      // Scroll to show end
-      requestAnimationFrame(() => {
-        if (rulerRef.current) {
-          const endIdx = dayToIndex(e);
-          const scrollTo =
-            endIdx * TICK_WIDTH - (rulerRef.current.clientWidth - 80);
-          rulerRef.current.scrollLeft = Math.max(0, scrollTo);
-        }
-      });
+      scrollToRange(s, e);
     },
-    [today, notifyChange]
+    [today, notifyChange, scrollToRange]
   );
 
   // ─── Month Click Handler ───
@@ -139,23 +491,10 @@ export default function TimelineDatePicker({
     (monthDate: Date) => {
       const s = startOfMonth(monthDate);
       const e = endOfMonth(monthDate);
-      // Clamp end to today
       const clampedEnd = e > today ? today : e;
-      setStartDate(s);
-      setEndDate(clampedEnd);
-      setActivePreset(null);
-      notifyChange(s, clampedEnd);
-      // Scroll to show
-      requestAnimationFrame(() => {
-        if (rulerRef.current) {
-          const midIdx = dayToIndex(s) + differenceInCalendarDays(clampedEnd, s) / 2;
-          const scrollTo =
-            midIdx * TICK_WIDTH - rulerRef.current.clientWidth / 2;
-          rulerRef.current.scrollLeft = Math.max(0, scrollTo);
-        }
-      });
+      applyRange(s, clampedEnd, "month");
     },
-    [today, notifyChange]
+    [today, applyRange]
   );
 
   // ─── Back Chevron ───
@@ -166,10 +505,29 @@ export default function TimelineDatePicker({
     }
   }, []);
 
-  // ─── Drag Logic (mouse + touch) ───
-  const getClientX = (e: MouseEvent | TouchEvent) =>
-    "touches" in e ? e.touches[0].clientX : e.clientX;
+  // ─── NL Parse Handler ───
+  const handleNLParse = useCallback(
+    (text: string) => {
+      setInputValue(text);
+      const result = parseDateInput(text);
+      if (result) {
+        applyRange(result.startDate, result.endDate, result.granularity);
+      }
+    },
+    [applyRange]
+  );
 
+  // ─── Panel Selection Handler ───
+  const handlePanelSelect = useCallback(
+    (s: Date, e: Date) => {
+      applyRange(s, e, activeGranularity ?? undefined);
+      setInputValue("");
+      setIsFocused(false);
+    },
+    [applyRange, activeGranularity]
+  );
+
+  // ─── Drag Logic (mouse + touch) ───
   const startDrag = useCallback(
     (type: "body" | "left" | "right", clientX: number) => {
       dragType.current = type;
@@ -178,6 +536,7 @@ export default function TimelineDatePicker({
       dragStartEndDate.current = endDate;
       dragStartScroll.current = rulerRef.current?.scrollLeft ?? 0;
       setIsDragging(true);
+      setActiveGranularity(null);
     },
     [startDate, endDate]
   );
@@ -201,7 +560,6 @@ export default function TimelineDatePicker({
 
   const applyDragDelta = useCallback(
     (clientX: number) => {
-      // On touch, the ruler may also scroll, so compensate for scroll delta
       const scrollDelta =
         (rulerRef.current?.scrollLeft ?? 0) - dragStartScroll.current;
       const dx = clientX - dragStartX.current + scrollDelta;
@@ -254,8 +612,10 @@ export default function TimelineDatePicker({
     if (!isDragging) return;
 
     const handleMove = (e: MouseEvent | TouchEvent) => {
-      if ("touches" in e) e.preventDefault(); // prevent scroll while dragging
-      applyDragDelta(getClientX(e));
+      if ("touches" in e) e.preventDefault();
+      const clientX =
+        "touches" in e ? e.touches[0].clientX : e.clientX;
+      applyDragDelta(clientX);
     };
 
     const handleEnd = () => {
@@ -293,10 +653,8 @@ export default function TimelineDatePicker({
     for (let i = 0; i <= TOTAL_DAYS; i++) {
       const d = indexToDay(i);
       const isMonth = d.getDate() === 1;
-      const isWeek = d.getDay() === 0; // Sunday
-      if (i % 1 === 0) {
-        result.push({ index: i, isWeek, isMonth });
-      }
+      const isWeek = d.getDay() === 0;
+      result.push({ index: i, isWeek, isMonth });
     }
     return result;
   }, []);
@@ -313,9 +671,42 @@ export default function TimelineDatePicker({
       ref={containerRef}
       className="proteus-panel w-full max-w-4xl rounded-xl p-3 sm:p-5 select-none"
     >
-      {/* Row 1: Date label + Presets */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <span className="text-sm font-medium text-gray-800">{dateLabel}</span>
+      {/* Row 1: Text Input + Presets */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+        <div className="relative flex-1 max-w-xs">
+          <input
+            type="text"
+            className={cn(
+              "text-sm w-full bg-transparent outline-none py-1 pr-7",
+              "border-b-2 transition-colors",
+              isFocused
+                ? "border-blue-400 text-gray-800 placeholder-gray-400"
+                : "border-transparent text-gray-800 font-medium"
+            )}
+            value={isFocused ? inputValue : dateLabel}
+            placeholder={isFocused ? `e.g. "Q4", "yesterday", "july"` : undefined}
+            onChange={(e) => handleNLParse(e.target.value)}
+            onFocus={() => {
+              setIsFocused(true);
+              setInputValue("");
+            }}
+            onBlur={() => {
+              // Delay to allow panel clicks to register
+              setTimeout(() => setIsFocused(false), 200);
+            }}
+          />
+          {isFocused && inputValue && (
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                setInputValue("");
+              }}
+              className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar shrink-0">
           {presets.map((p) => (
             <button
@@ -334,9 +725,78 @@ export default function TimelineDatePicker({
         </div>
       </div>
 
-      {/* Row 2: Back chevron + Ruler */}
-      <div className="flex items-stretch gap-2">
-        {/* Back Chevron */}
+      {/* Row 2: Granularity Tabs */}
+      <div className="flex items-center gap-1 mb-1 overflow-x-auto hide-scrollbar border-b border-gray-100">
+        {GRANULARITY_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() =>
+              setActiveGranularity((prev) =>
+                prev === tab.key ? null : tab.key
+              )
+            }
+            className={cn(
+              "px-3 py-1.5 text-xs whitespace-nowrap transition-all duration-200 border-b-2 -mb-px",
+              activeGranularity === tab.key
+                ? "border-blue-500 text-blue-600 font-semibold"
+                : "border-transparent text-gray-400 hover:text-gray-600"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Row 3: Selection Panel (conditional) */}
+      <div
+        className={cn(
+          "overflow-hidden transition-all duration-300 ease-in-out",
+          activeGranularity ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        {activeGranularity === "year" && (
+          <YearPanel
+            today={today}
+            startDate={startDate}
+            endDate={endDate}
+            onSelect={handlePanelSelect}
+          />
+        )}
+        {activeGranularity === "half-year" && (
+          <HalfYearPanel
+            today={today}
+            startDate={startDate}
+            endDate={endDate}
+            onSelect={handlePanelSelect}
+          />
+        )}
+        {activeGranularity === "quarter" && (
+          <QuarterPanel
+            today={today}
+            startDate={startDate}
+            endDate={endDate}
+            onSelect={handlePanelSelect}
+          />
+        )}
+        {activeGranularity === "month" && (
+          <MonthPanel
+            today={today}
+            startDate={startDate}
+            endDate={endDate}
+            onSelect={handlePanelSelect}
+          />
+        )}
+        {activeGranularity === "day" && (
+          <DayPanel
+            today={today}
+            startDate={startDate}
+            onSelect={handlePanelSelect}
+          />
+        )}
+      </div>
+
+      {/* Row 4: Back chevron + Ruler */}
+      <div className="flex items-stretch gap-2 mt-2">
         <button
           onClick={handleBack}
           className="flex items-center justify-center w-8 shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
@@ -359,13 +819,11 @@ export default function TimelineDatePicker({
           </svg>
         </button>
 
-        {/* Ruler container */}
         <div
           ref={rulerRef}
           className="relative flex-1 overflow-x-auto hide-scrollbar"
           style={{ height: 72 }}
         >
-          {/* Full-width ruler track */}
           <div
             className="relative"
             style={{ width: RULER_WIDTH, height: "100%" }}
@@ -412,7 +870,7 @@ export default function TimelineDatePicker({
                   : "rgb(147 197 253)",
               }}
             >
-              {/* Left resize handle — wider hit area on mobile */}
+              {/* Left resize handle */}
               <div
                 onMouseDown={(e) => handleMouseDown("left", e)}
                 onTouchStart={(e) => handleTouchStart("left", e)}
@@ -430,7 +888,7 @@ export default function TimelineDatePicker({
                 </span>
               </div>
 
-              {/* Right resize handle — larger on mobile */}
+              {/* Right resize handle */}
               <div
                 onMouseDown={(e) => handleMouseDown("right", e)}
                 onTouchStart={(e) => handleTouchStart("right", e)}
