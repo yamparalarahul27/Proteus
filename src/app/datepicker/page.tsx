@@ -100,40 +100,46 @@ export default function DatePickerPage() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 gap-5">
-        {/* Title */}
-        <h1 className="text-xl font-semibold text-gray-800">
-          Date Picker Component
-        </h1>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSheetOpen("code")}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 shadow-sm hover:border-gray-300 hover:shadow transition-all"
-          >
-            <Code size={14} />
-            Copy Code (NextJs)
-          </button>
-          <button
-            onClick={() => setIsVisible((v) => !v)}
-            className={cn(
-              "p-2.5 rounded-xl transition-all duration-200",
-              isVisible
-                ? "bg-white border border-gray-300 shadow-sm text-gray-800"
-                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-            )}
-            aria-label="Toggle date picker"
-          >
-            <Calendar size={18} />
-          </button>
-          <button
-            onClick={() => setSheetOpen("prompt")}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 shadow-sm hover:border-gray-300 hover:shadow transition-all"
-          >
-            <MessageSquare size={14} />
-            Copy Prompt
-          </button>
+        {/* Title + Credits */}
+        <div className="text-center space-y-1.5">
+          <h1 className="text-xl font-semibold text-gray-800">
+            Date Picker Component
+          </h1>
+          <p className="text-xs text-gray-400">
+            Inspired and combined engineered from the work of{" "}
+            <a
+              href="https://x.com/kvnkld"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-gray-600 transition-colors"
+            >
+              @kvnkld
+            </a>
+            {" & "}
+            <a
+              href="https://x.com/kenneth_skovhus"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-gray-600 transition-colors"
+            >
+              @kenneth_skovhus
+            </a>
+          </p>
         </div>
+
+        {/* Calendar Toggle */}
+        <button
+          onClick={() => setIsVisible((v) => !v)}
+          className={cn(
+            "p-2.5 rounded-xl transition-all duration-200",
+            isVisible
+              ? "bg-white border border-gray-300 shadow-sm text-gray-800"
+              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+          )}
+          aria-label="Toggle date picker"
+        >
+          <Calendar size={18} />
+        </button>
 
         {/* Date Picker Component */}
         <div
@@ -149,27 +155,23 @@ export default function DatePickerPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200/60 px-4 py-4 text-center">
-        <p className="text-xs text-gray-400">
-          Inspired and combined engineered from the work of{" "}
-          <a
-            href="https://x.com/kvnkld"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-gray-600 transition-colors"
+      <footer className="border-t border-gray-200/60 px-4 py-4">
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => setSheetOpen("code")}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 shadow-sm hover:border-gray-300 hover:shadow transition-all"
           >
-            @kvnkld
-          </a>
-          {" & "}
-          <a
-            href="https://x.com/kenneth_skovhus"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-gray-600 transition-colors"
+            <Code size={14} />
+            Copy Code (NextJs)
+          </button>
+          <button
+            onClick={() => setSheetOpen("prompt")}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 shadow-sm hover:border-gray-300 hover:shadow transition-all"
           >
-            @kenneth_skovhus
-          </a>
-        </p>
+            <MessageSquare size={14} />
+            Copy Prompt
+          </button>
+        </div>
       </footer>
 
       {/* Bottom Sheets */}
