@@ -3,380 +3,35 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   addDays,
-  addMonths,
   differenceInCalendarDays,
   endOfMonth,
-  endOfYear,
   format,
-  getDay,
   isToday,
   startOfMonth,
-  startOfYear,
   subDays,
-  subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { parseDateInput, type Granularity } from "@/lib/parseDateInput";
 import {
-  parseDateInput,
-  type Granularity,
-} from "@/lib/parseDateInput";
-
-type Preset = "thisMonth" | "7d" | "30d" | "90d" | null;
-
-const TICK_WIDTH = 4;
-const TOTAL_DAYS = 365;
-const RULER_WIDTH = TOTAL_DAYS * TICK_WIDTH;
-
-function getToday() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function dayToIndex(day: Date): number {
-  const today = getToday();
-  const diff = differenceInCalendarDays(today, day);
-  return TOTAL_DAYS - diff;
-}
-
-function indexToDay(index: number): Date {
-  const today = getToday();
-  return subDays(today, TOTAL_DAYS - index);
-}
-
-function getMonthMarkers() {
-  const today = getToday();
-  const markers: { label: string; index: number; date: Date }[] = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = startOfMonth(subMonths(today, i));
-    const idx = dayToIndex(d);
-    if (idx >= 0 && idx <= TOTAL_DAYS) {
-      markers.push({ label: format(d, "MMMM"), index: idx, date: d });
-    }
-  }
-  return markers;
-}
-
-const GRANULARITY_TABS: { key: Granularity; label: string }[] = [
-  { key: "day", label: "Day" },
-  { key: "month", label: "Month" },
-  { key: "quarter", label: "Quarter" },
-  { key: "half-year", label: "Half-year" },
-  { key: "year", label: "Year" },
-];
-
-// ─── Granularity Panels ───
-
-function YearPanel({
-  today,
-  startDate,
-  endDate,
-  onSelect,
-}: {
-  today: Date;
-  startDate: Date;
-  endDate: Date;
-  onSelect: (s: Date, e: Date) => void;
-}) {
-  const currentYear = today.getFullYear();
-  const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
-
-  return (
-    <div className="flex flex-wrap gap-2 py-3">
-      {years.map((y) => {
-        const s = new Date(y, 0, 1);
-        const e = endOfYear(s);
-        const isSelected =
-          startDate.getFullYear() === y &&
-          startOfYear(startDate).getTime() === s.getTime() &&
-          endDate.getTime() === (e > today ? today : e).getTime();
-        return (
-          <button
-            key={y}
-            onClick={() => onSelect(s, e > today ? today : e)}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm transition-all",
-              isSelected
-                ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
-                : "border border-gray-200 text-gray-600 hover:border-gray-400"
-            )}
-          >
-            {y}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function HalfYearPanel({
-  today,
-  startDate,
-  endDate,
-  onSelect,
-}: {
-  today: Date;
-  startDate: Date;
-  endDate: Date;
-  onSelect: (s: Date, e: Date) => void;
-}) {
-  const currentYear = today.getFullYear();
-  const years = [currentYear - 1, currentYear, currentYear + 1];
-
-  return (
-    <div className="py-3 space-y-3">
-      {years.map((y) => (
-        <div key={y}>
-          <div className="text-xs text-gray-400 mb-1.5">{y}</div>
-          <div className="flex gap-2">
-            {[1, 2].map((h) => {
-              const s = h === 1 ? new Date(y, 0, 1) : new Date(y, 6, 1);
-              const e =
-                h === 1
-                  ? endOfMonth(new Date(y, 5, 1))
-                  : endOfMonth(new Date(y, 11, 1));
-              const clampedEnd = e > today ? today : e;
-              const isFuture = s > today;
-              const isSelected =
-                startDate.getTime() === s.getTime() &&
-                endDate.getTime() === clampedEnd.getTime();
-              return (
-                <button
-                  key={h}
-                  disabled={isFuture}
-                  onClick={() => onSelect(s, clampedEnd)}
-                  className={cn(
-                    "px-4 py-2.5 sm:py-2 rounded-lg text-sm transition-all",
-                    isFuture && "opacity-40 cursor-not-allowed",
-                    isSelected
-                      ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
-                      : "border border-gray-200 text-gray-600 hover:border-gray-400"
-                  )}
-                >
-                  H{h}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function QuarterPanel({
-  today,
-  startDate,
-  endDate,
-  onSelect,
-}: {
-  today: Date;
-  startDate: Date;
-  endDate: Date;
-  onSelect: (s: Date, e: Date) => void;
-}) {
-  const currentYear = today.getFullYear();
-  const years = [currentYear - 1, currentYear, currentYear + 1];
-
-  return (
-    <div className="py-3 space-y-3">
-      {years.map((y) => (
-        <div key={y}>
-          <div className="text-xs text-gray-400 mb-1.5">{y}</div>
-          <div className="grid grid-cols-4 gap-2">
-            {[1, 2, 3, 4].map((q) => {
-              const startMonth = (q - 1) * 3;
-              const s = new Date(y, startMonth, 1);
-              const e = endOfMonth(new Date(y, startMonth + 2, 1));
-              const clampedEnd = e > today ? today : e;
-              const isFuture = s > today;
-              const isSelected =
-                startDate.getTime() === s.getTime() &&
-                endDate.getTime() === clampedEnd.getTime();
-              return (
-                <button
-                  key={q}
-                  disabled={isFuture}
-                  onClick={() => onSelect(s, clampedEnd)}
-                  className={cn(
-                    "px-3 py-2.5 sm:py-2 rounded-lg text-sm transition-all",
-                    isFuture && "opacity-40 cursor-not-allowed",
-                    isSelected
-                      ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
-                      : "border border-gray-200 text-gray-600 hover:border-gray-400"
-                  )}
-                >
-                  Q{q}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function MonthPanel({
-  today,
-  startDate,
-  endDate,
-  onSelect,
-}: {
-  today: Date;
-  startDate: Date;
-  endDate: Date;
-  onSelect: (s: Date, e: Date) => void;
-}) {
-  const currentYear = today.getFullYear();
-  const years = [currentYear - 1, currentYear];
-  const monthNames = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
-
-  return (
-    <div className="py-3 space-y-3">
-      {years.map((y) => (
-        <div key={y}>
-          <div className="text-xs text-gray-400 mb-1.5">{y}</div>
-          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-            {monthNames.map((name, i) => {
-              const s = new Date(y, i, 1);
-              const e = endOfMonth(s);
-              const clampedEnd = e > today ? today : e;
-              const isFuture = s > today;
-              const isSelected =
-                startDate.getTime() === s.getTime() &&
-                endDate.getTime() === clampedEnd.getTime();
-              return (
-                <button
-                  key={i}
-                  disabled={isFuture}
-                  onClick={() => onSelect(s, clampedEnd)}
-                  className={cn(
-                    "px-2 py-2 sm:py-1.5 rounded-lg text-sm transition-all",
-                    isFuture && "opacity-40 cursor-not-allowed",
-                    isSelected
-                      ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
-                      : "border border-gray-200 text-gray-600 hover:border-gray-400"
-                  )}
-                >
-                  {name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DayPanel({
-  today,
-  startDate,
-  onSelect,
-}: {
-  today: Date;
-  startDate: Date;
-  onSelect: (s: Date, e: Date) => void;
-}) {
-  const [viewMonth, setViewMonth] = useState(startDate);
-  const monthStart = startOfMonth(viewMonth);
-  const monthEnd = endOfMonth(viewMonth);
-  const startDay = getDay(monthStart);
-  const daysInMonth = monthEnd.getDate();
-
-  const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
-  // Build the grid: leading blanks + days
-  const cells: (number | null)[] = [];
-  for (let i = 0; i < startDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  return (
-    <div className="py-3">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-gray-700">
-          {format(viewMonth, "MMMM yyyy")}
-        </span>
-        <div className="flex gap-1">
-          <button
-            onClick={() => setViewMonth((v) => subMonths(v, 1))}
-            className="p-2 sm:p-1 rounded hover:bg-gray-100 text-gray-500"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <button
-            onClick={() => setViewMonth((v) => addMonths(v, 1))}
-            className="p-2 sm:p-1 rounded hover:bg-gray-100 text-gray-500"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      </div>
-
-      {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-0 mb-1">
-        {weekdays.map((wd) => (
-          <div
-            key={wd}
-            className="text-center text-[11px] font-medium text-gray-400 py-1"
-          >
-            {wd}
-          </div>
-        ))}
-      </div>
-
-      {/* Day cells */}
-      <div className="grid grid-cols-7 gap-0">
-        {cells.map((day, i) => {
-          if (day === null) {
-            return <div key={`blank-${i}`} className="h-10 sm:h-9" />;
-          }
-          const date = new Date(
-            viewMonth.getFullYear(),
-            viewMonth.getMonth(),
-            day
-          );
-          date.setHours(0, 0, 0, 0);
-          const isFuture = date > today;
-          const isSelected = startDate.getTime() === date.getTime();
-          const isTodayDate = isToday(date);
-          const dayOfWeek = (startDay + day - 1) % 7;
-          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-          return (
-            <button
-              key={day}
-              disabled={isFuture}
-              onClick={() => onSelect(date, date)}
-              className={cn(
-                "h-10 sm:h-9 flex items-center justify-center rounded-full text-sm transition-all",
-                isFuture && "opacity-30 cursor-not-allowed",
-                isSelected &&
-                  "bg-blue-500 text-white font-semibold",
-                !isSelected && isTodayDate &&
-                  "ring-2 ring-blue-300 ring-inset font-semibold text-blue-600",
-                !isSelected && !isFuture && !isTodayDate && isWeekend &&
-                  "text-gray-400 hover:bg-gray-100",
-                !isSelected && !isFuture && !isTodayDate && !isWeekend &&
-                  "text-gray-700 hover:bg-gray-100"
-              )}
-            >
-              {day}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── Main Component ───
+  DayPanel,
+  HalfYearPanel,
+  MonthPanel,
+  QuarterPanel,
+  YearPanel,
+} from "./timeline-date-picker/panels";
+import {
+  dayToIndex,
+  getMonthMarkers,
+  getToday,
+  GRANULARITY_TABS,
+  indexToDay,
+  PRESET_OPTIONS,
+  RULER_WIDTH,
+  TICK_WIDTH,
+  TOTAL_DAYS,
+  type Preset,
+} from "./timeline-date-picker/constants";
 
 export default function TimelineDatePicker({
   onChange,
@@ -390,14 +45,12 @@ export default function TimelineDatePicker({
   const [activePreset, setActivePreset] = useState<Preset>("thisMonth");
   const [isDragging, setIsDragging] = useState(false);
 
-  // New state for text input + granularity
   const [inputValue, setInputValue] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [activeGranularity, setActiveGranularity] =
     useState<Granularity | null>(null);
 
   const rulerRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const dragType = useRef<"body" | "left" | "right" | null>(null);
   const dragStartX = useRef(0);
@@ -408,126 +61,129 @@ export default function TimelineDatePicker({
   const dayCount = differenceInCalendarDays(endDate, startDate) + 1;
   const monthMarkers = useMemo(() => getMonthMarkers(), []);
 
-  // Scroll so selection is visible on mount
   useEffect(() => {
-    if (rulerRef.current) {
-      const endIdx = dayToIndex(endDate);
-      const scrollTo =
-        endIdx * TICK_WIDTH - (rulerRef.current.clientWidth - 80);
-      rulerRef.current.scrollLeft = Math.max(0, scrollTo);
+    if (!rulerRef.current) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    const endIndex = dayToIndex(endDate);
+    const scrollTo = endIndex * TICK_WIDTH - (rulerRef.current.clientWidth - 80);
+    rulerRef.current.scrollLeft = Math.max(0, scrollTo);
+  }, [endDate]);
 
   const notifyChange = useCallback(
-    (s: Date, e: Date) => {
-      onChange?.({ startDate: s, endDate: e });
+    (nextStartDate: Date, nextEndDate: Date) => {
+      onChange?.({ startDate: nextStartDate, endDate: nextEndDate });
     },
-    [onChange]
+    [onChange],
   );
 
-  const scrollToRange = useCallback((s: Date, e: Date) => {
+  const scrollToRange = useCallback((nextStartDate: Date, nextEndDate: Date) => {
     requestAnimationFrame(() => {
-      if (rulerRef.current) {
-        const midIdx =
-          dayToIndex(s) + differenceInCalendarDays(e, s) / 2;
-        const scrollTo =
-          midIdx * TICK_WIDTH - rulerRef.current.clientWidth / 2;
-        rulerRef.current.scrollLeft = Math.max(0, scrollTo);
+      if (!rulerRef.current) {
+        return;
       }
+
+      const midpoint =
+        dayToIndex(nextStartDate) +
+        differenceInCalendarDays(nextEndDate, nextStartDate) / 2;
+      const scrollTo = midpoint * TICK_WIDTH - rulerRef.current.clientWidth / 2;
+      rulerRef.current.scrollLeft = Math.max(0, scrollTo);
     });
   }, []);
 
-  // ─── Apply a date range from any source ───
   const applyRange = useCallback(
-    (s: Date, e: Date, granularity?: Granularity) => {
-      const clampedEnd = e > today ? today : e;
-      setStartDate(s);
-      setEndDate(clampedEnd);
+    (
+      nextStartDate: Date,
+      nextEndDate: Date,
+      granularity?: Granularity,
+    ) => {
+      const cappedEndDate = nextEndDate > today ? today : nextEndDate;
+      setStartDate(nextStartDate);
+      setEndDate(cappedEndDate);
       setActivePreset(null);
       if (granularity !== undefined) {
         setActiveGranularity(granularity);
       }
-      notifyChange(s, clampedEnd);
-      scrollToRange(s, clampedEnd);
+      notifyChange(nextStartDate, cappedEndDate);
+      scrollToRange(nextStartDate, cappedEndDate);
     },
-    [today, notifyChange, scrollToRange]
+    [notifyChange, scrollToRange, today],
   );
 
-  // ─── Preset Handlers ───
   const applyPreset = useCallback(
     (preset: Preset) => {
       setActivePreset(preset);
       setActiveGranularity(null);
       setInputValue("");
-      let s: Date;
-      const e: Date = today;
+
+      let nextStartDate: Date;
+      const nextEndDate: Date = today;
+
       switch (preset) {
         case "thisMonth":
-          s = startOfMonth(today);
+          nextStartDate = startOfMonth(today);
           break;
         case "7d":
-          s = subDays(today, 6);
+          nextStartDate = subDays(today, 6);
           break;
         case "30d":
-          s = subDays(today, 29);
+          nextStartDate = subDays(today, 29);
           break;
         case "90d":
-          s = subDays(today, 89);
+          nextStartDate = subDays(today, 89);
           break;
         default:
           return;
       }
-      setStartDate(s);
-      setEndDate(e);
-      notifyChange(s, e);
-      scrollToRange(s, e);
+
+      setStartDate(nextStartDate);
+      setEndDate(nextEndDate);
+      notifyChange(nextStartDate, nextEndDate);
+      scrollToRange(nextStartDate, nextEndDate);
     },
-    [today, notifyChange, scrollToRange]
+    [notifyChange, scrollToRange, today],
   );
 
-  // ─── Month Click Handler ───
   const handleMonthClick = useCallback(
     (monthDate: Date) => {
-      const s = startOfMonth(monthDate);
-      const e = endOfMonth(monthDate);
-      const clampedEnd = e > today ? today : e;
-      applyRange(s, clampedEnd, "month");
+      const nextStartDate = startOfMonth(monthDate);
+      const nextEndDate = endOfMonth(monthDate);
+      const cappedEndDate = nextEndDate > today ? today : nextEndDate;
+      applyRange(nextStartDate, cappedEndDate, "month");
     },
-    [today, applyRange]
+    [applyRange, today],
   );
 
-  // ─── Back Chevron ───
   const handleBack = useCallback(() => {
-    if (rulerRef.current) {
-      const monthPx = 30 * TICK_WIDTH;
-      rulerRef.current.scrollBy({ left: -monthPx, behavior: "smooth" });
+    if (!rulerRef.current) {
+      return;
     }
+
+    const monthPixels = 30 * TICK_WIDTH;
+    rulerRef.current.scrollBy({ left: -monthPixels, behavior: "smooth" });
   }, []);
 
-  // ─── NL Parse Handler ───
-  const handleNLParse = useCallback(
+  const handleNaturalLanguageInput = useCallback(
     (text: string) => {
       setInputValue(text);
-      const result = parseDateInput(text);
-      if (result) {
-        applyRange(result.startDate, result.endDate, result.granularity);
+      const parsed = parseDateInput(text);
+      if (parsed) {
+        applyRange(parsed.startDate, parsed.endDate, parsed.granularity);
       }
     },
-    [applyRange]
+    [applyRange],
   );
 
-  // ─── Panel Selection Handler ───
   const handlePanelSelect = useCallback(
-    (s: Date, e: Date) => {
-      applyRange(s, e, activeGranularity ?? undefined);
+    (nextStartDate: Date, nextEndDate: Date) => {
+      applyRange(nextStartDate, nextEndDate, activeGranularity ?? undefined);
       setInputValue("");
       setIsFocused(false);
     },
-    [applyRange, activeGranularity]
+    [activeGranularity, applyRange],
   );
 
-  // ─── Drag Logic (mouse + touch) ───
   const startDrag = useCallback(
     (type: "body" | "left" | "right", clientX: number) => {
       dragType.current = type;
@@ -538,83 +194,102 @@ export default function TimelineDatePicker({
       setIsDragging(true);
       setActiveGranularity(null);
     },
-    [startDate, endDate]
+    [endDate, startDate],
   );
 
   const handleMouseDown = useCallback(
-    (type: "body" | "left" | "right", e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      startDrag(type, e.clientX);
+    (type: "body" | "left" | "right", event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      startDrag(type, event.clientX);
     },
-    [startDrag]
+    [startDrag],
   );
 
   const handleTouchStart = useCallback(
-    (type: "body" | "left" | "right", e: React.TouchEvent) => {
-      e.stopPropagation();
-      startDrag(type, e.touches[0].clientX);
+    (type: "body" | "left" | "right", event: React.TouchEvent) => {
+      event.stopPropagation();
+      startDrag(type, event.touches[0].clientX);
     },
-    [startDrag]
+    [startDrag],
   );
 
   const applyDragDelta = useCallback(
     (clientX: number) => {
       const scrollDelta =
         (rulerRef.current?.scrollLeft ?? 0) - dragStartScroll.current;
-      const dx = clientX - dragStartX.current + scrollDelta;
-      const dayDelta = Math.round(dx / TICK_WIDTH);
+      const deltaX = clientX - dragStartX.current + scrollDelta;
+      const dayDelta = Math.round(deltaX / TICK_WIDTH);
 
       if (dragType.current === "body") {
-        let newStart = addDays(dragStartStartDate.current, dayDelta);
-        let newEnd = addDays(dragStartEndDate.current, dayDelta);
+        let nextStartDate = addDays(dragStartStartDate.current, dayDelta);
+        let nextEndDate = addDays(dragStartEndDate.current, dayDelta);
+
         const span = differenceInCalendarDays(
           dragStartEndDate.current,
-          dragStartStartDate.current
+          dragStartStartDate.current,
         );
-        if (newEnd > today) {
-          newEnd = today;
-          newStart = subDays(today, span);
+
+        if (nextEndDate > today) {
+          nextEndDate = today;
+          nextStartDate = subDays(today, span);
         }
-        const earliest = indexToDay(0);
-        if (newStart < earliest) {
-          newStart = earliest;
-          newEnd = addDays(earliest, span);
+
+        const earliestDay = indexToDay(0);
+        if (nextStartDate < earliestDay) {
+          nextStartDate = earliestDay;
+          nextEndDate = addDays(earliestDay, span);
         }
-        setStartDate(newStart);
-        setEndDate(newEnd);
+
+        setStartDate(nextStartDate);
+        setEndDate(nextEndDate);
         setActivePreset(null);
       } else if (dragType.current === "left") {
-        let newStart = addDays(dragStartStartDate.current, dayDelta);
-        const earliest = indexToDay(0);
-        if (newStart < earliest) newStart = earliest;
-        if (newStart >= dragStartEndDate.current) {
-          newStart = subDays(dragStartEndDate.current, 1);
+        let nextStartDate = addDays(dragStartStartDate.current, dayDelta);
+
+        const earliestDay = indexToDay(0);
+        if (nextStartDate < earliestDay) {
+          nextStartDate = earliestDay;
         }
-        setStartDate(newStart);
+
+        if (nextStartDate >= dragStartEndDate.current) {
+          nextStartDate = subDays(dragStartEndDate.current, 1);
+        }
+
+        setStartDate(nextStartDate);
         setEndDate(dragStartEndDate.current);
         setActivePreset(null);
       } else if (dragType.current === "right") {
-        let newEnd = addDays(dragStartEndDate.current, dayDelta);
-        if (newEnd > today) newEnd = today;
-        if (newEnd <= dragStartStartDate.current) {
-          newEnd = addDays(dragStartStartDate.current, 1);
+        let nextEndDate = addDays(dragStartEndDate.current, dayDelta);
+
+        if (nextEndDate > today) {
+          nextEndDate = today;
         }
-        setEndDate(newEnd);
+
+        if (nextEndDate <= dragStartStartDate.current) {
+          nextEndDate = addDays(dragStartStartDate.current, 1);
+        }
+
+        setEndDate(nextEndDate);
         setStartDate(dragStartStartDate.current);
         setActivePreset(null);
       }
     },
-    [today]
+    [today],
   );
 
   useEffect(() => {
-    if (!isDragging) return;
+    if (!isDragging) {
+      return;
+    }
 
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-      if ("touches" in e) e.preventDefault();
+    const handleMove = (event: MouseEvent | TouchEvent) => {
+      if ("touches" in event) {
+        event.preventDefault();
+      }
+
       const clientX =
-        "touches" in e ? e.touches[0].clientX : e.clientX;
+        "touches" in event ? event.touches[0].clientX : event.clientX;
       applyDragDelta(clientX);
     };
 
@@ -629,6 +304,7 @@ export default function TimelineDatePicker({
     window.addEventListener("touchmove", handleMove, { passive: false });
     window.addEventListener("touchend", handleEnd);
     window.addEventListener("touchcancel", handleEnd);
+
     return () => {
       window.removeEventListener("mousemove", handleMove);
       window.removeEventListener("mouseup", handleEnd);
@@ -636,233 +312,221 @@ export default function TimelineDatePicker({
       window.removeEventListener("touchend", handleEnd);
       window.removeEventListener("touchcancel", handleEnd);
     };
-  }, [isDragging, applyDragDelta, startDate, endDate, notifyChange]);
+  }, [applyDragDelta, endDate, isDragging, notifyChange, startDate]);
 
-  // ─── Computed positions ───
-  const startIdx = dayToIndex(startDate);
-  const endIdx = dayToIndex(endDate);
-  const selLeft = startIdx * TICK_WIDTH;
-  const selWidth = (endIdx - startIdx + 1) * TICK_WIDTH;
+  const startIndex = dayToIndex(startDate);
+  const endIndex = dayToIndex(endDate);
+  const selectionLeft = startIndex * TICK_WIDTH;
+  const selectionWidth = (endIndex - startIndex + 1) * TICK_WIDTH;
 
-  // ─── Date Label ───
-  const dateLabel = `${format(startDate, "MMMM d")} – ${isToday(endDate) ? "Today" : format(endDate, "MMMM d")}`;
+  const dateLabel = `${format(startDate, "MMMM d")} – ${
+    isToday(endDate) ? "Today" : format(endDate, "MMMM d")
+  }`;
 
-  // ─── Generate tick marks ───
   const ticks = useMemo(() => {
-    const result: { index: number; isWeek: boolean; isMonth: boolean }[] = [];
-    for (let i = 0; i <= TOTAL_DAYS; i++) {
-      const d = indexToDay(i);
-      const isMonth = d.getDate() === 1;
-      const isWeek = d.getDay() === 0;
-      result.push({ index: i, isWeek, isMonth });
+    const builtTicks: { index: number; isWeek: boolean; isMonth: boolean }[] = [];
+
+    for (let i = 0; i <= TOTAL_DAYS; i += 1) {
+      const date = indexToDay(i);
+      builtTicks.push({
+        index: i,
+        isWeek: date.getDay() === 0,
+        isMonth: date.getDate() === 1,
+      });
     }
-    return result;
+
+    return builtTicks;
   }, []);
 
-  const presets: { key: Preset; label: string }[] = [
-    { key: "thisMonth", label: "This month" },
-    { key: "7d", label: "Last 7D" },
-    { key: "30d", label: "30D" },
-    { key: "90d", label: "90D" },
-  ];
-
   return (
-    <div
-      ref={containerRef}
-      className="proteus-panel w-full max-w-4xl rounded-xl p-3 sm:p-5 select-none"
-    >
-      {/* Row 1: Text Input + Presets */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+    <div className="proteus-panel hide-scrollbar w-full max-w-4xl select-none rounded-xl p-3 sm:p-5">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 sm:max-w-xs">
           <input
-            type="text"
             className={cn(
-              "text-sm w-full bg-transparent outline-none py-1 pr-7",
-              "border-b-2 transition-colors",
+              "w-full border-b-2 bg-transparent py-1 pr-7 text-sm outline-none transition-colors",
               isFocused
                 ? "border-blue-400 text-gray-800 placeholder-gray-400"
-                : "border-transparent text-gray-800 font-medium"
+                : "border-transparent font-medium text-gray-800",
             )}
-            value={isFocused ? inputValue : dateLabel}
-            placeholder={isFocused ? `e.g. "Q4", "yesterday", "july"` : undefined}
-            onChange={(e) => handleNLParse(e.target.value)}
+            onBlur={() => {
+              setTimeout(() => setIsFocused(false), 200);
+            }}
+            onChange={(event) => handleNaturalLanguageInput(event.target.value)}
             onFocus={() => {
               setIsFocused(true);
               setInputValue("");
             }}
-            onBlur={() => {
-              // Delay to allow panel clicks to register
-              setTimeout(() => setIsFocused(false), 200);
-            }}
+            placeholder={isFocused ? 'e.g. "Q4", "yesterday", "july"' : undefined}
+            type="text"
+            value={isFocused ? inputValue : dateLabel}
           />
-          {isFocused && inputValue && (
+
+          {isFocused && inputValue ? (
             <button
-              onMouseDown={(e) => e.preventDefault()}
+              className="absolute top-1/2 right-0 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
               onClick={() => {
                 setInputValue("");
               }}
-              className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+              onMouseDown={(event) => event.preventDefault()}
             >
               <X size={14} />
             </button>
-          )}
+          ) : null}
         </div>
-        <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar shrink-0">
-          {presets.map((p) => (
+
+        <div className="hide-scrollbar flex shrink-0 items-center gap-1 overflow-x-auto">
+          {PRESET_OPTIONS.map((preset) => (
             <button
-              key={p.key}
-              onClick={() => applyPreset(p.key)}
               className={cn(
-                "px-3 py-1.5 text-xs rounded-full transition-all duration-200 whitespace-nowrap",
-                activePreset === p.key
-                  ? "bg-white border border-gray-300 font-bold text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                "whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition-all duration-200",
+                activePreset === preset.key
+                  ? "border border-gray-300 bg-white font-bold text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700",
               )}
+              key={preset.key}
+              onClick={() => applyPreset(preset.key)}
             >
-              {p.label}
+              {preset.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Row 2: Granularity Tabs */}
-      <div className="flex items-center gap-1 mb-1 overflow-x-auto hide-scrollbar border-b border-gray-100">
+      <div className="hide-scrollbar -mb-px mb-1 flex items-center gap-1 overflow-x-auto border-b border-gray-100">
         {GRANULARITY_TABS.map((tab) => (
           <button
+            className={cn(
+              "-mb-px border-b-2 px-3 py-2.5 text-xs whitespace-nowrap transition-all duration-200 sm:py-1.5",
+              activeGranularity === tab.key
+                ? "border-blue-500 font-semibold text-blue-600"
+                : "border-transparent text-gray-400 hover:text-gray-600",
+            )}
             key={tab.key}
             onClick={() =>
-              setActiveGranularity((prev) =>
-                prev === tab.key ? null : tab.key
+              setActiveGranularity((previous) =>
+                previous === tab.key ? null : tab.key,
               )
             }
-            className={cn(
-              "px-3 py-2.5 sm:py-1.5 text-xs whitespace-nowrap transition-all duration-200 border-b-2 -mb-px",
-              activeGranularity === tab.key
-                ? "border-blue-500 text-blue-600 font-semibold"
-                : "border-transparent text-gray-400 hover:text-gray-600"
-            )}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Row 3: Selection Panel (conditional) */}
       <div
         className={cn(
           "overflow-hidden transition-all duration-300 ease-in-out",
-          activeGranularity ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
+          activeGranularity ? "max-h-80 opacity-100" : "max-h-0 opacity-0",
         )}
       >
-        {activeGranularity === "year" && (
+        {activeGranularity === "year" ? (
           <YearPanel
-            today={today}
-            startDate={startDate}
             endDate={endDate}
             onSelect={handlePanelSelect}
+            startDate={startDate}
+            today={today}
           />
-        )}
-        {activeGranularity === "half-year" && (
+        ) : null}
+
+        {activeGranularity === "half-year" ? (
           <HalfYearPanel
-            today={today}
-            startDate={startDate}
             endDate={endDate}
             onSelect={handlePanelSelect}
+            startDate={startDate}
+            today={today}
           />
-        )}
-        {activeGranularity === "quarter" && (
+        ) : null}
+
+        {activeGranularity === "quarter" ? (
           <QuarterPanel
-            today={today}
-            startDate={startDate}
             endDate={endDate}
             onSelect={handlePanelSelect}
+            startDate={startDate}
+            today={today}
           />
-        )}
-        {activeGranularity === "month" && (
+        ) : null}
+
+        {activeGranularity === "month" ? (
           <MonthPanel
-            today={today}
-            startDate={startDate}
             endDate={endDate}
             onSelect={handlePanelSelect}
-          />
-        )}
-        {activeGranularity === "day" && (
-          <DayPanel
-            today={today}
             startDate={startDate}
-            onSelect={handlePanelSelect}
+            today={today}
           />
-        )}
+        ) : null}
+
+        {activeGranularity === "day" ? (
+          <DayPanel
+            onSelect={handlePanelSelect}
+            startDate={startDate}
+            today={today}
+          />
+        ) : null}
       </div>
 
-      {/* Row 4: Back chevron + Ruler */}
-      <div className="flex items-stretch gap-2 mt-2">
+      <div className="mt-2 flex items-stretch gap-2">
         <button
-          onClick={handleBack}
-          className="flex items-center justify-center w-8 shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
           aria-label="Scroll timeline back"
+          className="flex w-8 shrink-0 items-center justify-center text-gray-400 transition-colors hover:text-gray-600"
+          onClick={handleBack}
         >
           <svg
-            width="16"
+            className="shrink-0"
+            fill="none"
             height="16"
             viewBox="0 0 16 16"
-            fill="none"
-            className="shrink-0"
+            width="16"
           >
             <path
               d="M10.5 3L5.5 8L10.5 13"
               stroke="currentColor"
-              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeWidth="2"
             />
           </svg>
         </button>
 
         <div
+          className="hide-scrollbar relative flex-1 overflow-x-auto"
           ref={rulerRef}
-          className="relative flex-1 overflow-x-auto hide-scrollbar"
           style={{ height: 72 }}
         >
-          <div
-            className="relative"
-            style={{ width: RULER_WIDTH, height: "100%" }}
-          >
-            {/* Tick marks */}
+          <div className="relative" style={{ width: RULER_WIDTH, height: "100%" }}>
             <div className="absolute inset-x-0 top-0" style={{ height: 36 }}>
-              {ticks.map((t) => {
-                const left = t.index * TICK_WIDTH;
-                const insideSelection =
-                  t.index >= startIdx && t.index <= endIdx;
+              {ticks.map((tick) => {
+                const left = tick.index * TICK_WIDTH;
+                const insideSelection = tick.index >= startIndex && tick.index <= endIndex;
+
                 return (
                   <div
-                    key={t.index}
                     className={cn(
                       "absolute top-0 w-px",
-                      t.isMonth
+                      tick.isMonth
                         ? "h-6 bg-gray-400"
-                        : t.isWeek
+                        : tick.isWeek
                           ? "h-4 bg-gray-300"
                           : "h-2.5 bg-gray-200",
                       insideSelection && !isDragging && "bg-blue-300",
-                      insideSelection && isDragging && "bg-blue-400"
+                      insideSelection && isDragging && "bg-blue-400",
                     )}
+                    key={tick.index}
                     style={{ left }}
                   />
                 );
               })}
             </div>
 
-            {/* Selection window */}
             <div
               className={cn(
                 "absolute top-0 rounded-lg border bg-white/90 shadow-sm",
                 isDragging ? "border-blue-400 shadow-md" : "border-gray-200",
-                !isDragging && "transition-all duration-300 ease-out"
+                !isDragging && "transition-all duration-300 ease-out",
               )}
               style={{
-                left: selLeft,
-                width: Math.max(selWidth, 24),
+                left: selectionLeft,
+                width: Math.max(selectionWidth, 24),
                 height: 36,
                 borderLeftWidth: isDragging ? 3 : 2,
                 borderLeftColor: isDragging
@@ -870,58 +534,52 @@ export default function TimelineDatePicker({
                   : "rgb(147 197 253)",
               }}
             >
-              {/* Left resize handle */}
               <div
-                onMouseDown={(e) => handleMouseDown("left", e)}
-                onTouchStart={(e) => handleTouchStart("left", e)}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 flex items-center justify-center p-1 cursor-ew-resize"
+                className="absolute top-1/2 left-0 z-10 flex -translate-x-1/2 -translate-y-1/2 cursor-ew-resize items-center justify-center p-1"
+                onMouseDown={(event) => handleMouseDown("left", event)}
+                onTouchStart={(event) => handleTouchStart("left", event)}
               >
-                <div className="w-5 h-5 sm:w-4 sm:h-4 rounded-full bg-white border-2 border-blue-400 shadow hover:border-blue-500 hover:scale-110 transition-transform" />
+                <div className="h-5 w-5 rounded-full border-2 border-blue-400 bg-white shadow transition-transform hover:scale-110 hover:border-blue-500 sm:h-4 sm:w-4" />
               </div>
 
-              {/* Draggable body */}
               <div
-                onMouseDown={(e) => handleMouseDown("body", e)}
-                onTouchStart={(e) => handleTouchStart("body", e)}
-                className="absolute inset-0 mx-4 flex items-center justify-center cursor-grab active:cursor-grabbing"
+                className="absolute inset-0 mx-4 flex cursor-grab items-center justify-center active:cursor-grabbing"
+                onMouseDown={(event) => handleMouseDown("body", event)}
+                onTouchStart={(event) => handleTouchStart("body", event)}
               >
-                <span className="text-[10px] font-semibold text-gray-600 whitespace-nowrap pointer-events-none">
+                <span className="pointer-events-none text-[10px] font-semibold whitespace-nowrap text-gray-600">
                   {dayCount} {dayCount === 1 ? "Day" : "Days"}
                 </span>
               </div>
 
-              {/* Right resize handle */}
               <div
-                onMouseDown={(e) => handleMouseDown("right", e)}
-                onTouchStart={(e) => handleTouchStart("right", e)}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 flex items-center justify-center p-1"
+                className="absolute top-1/2 right-0 z-10 flex translate-x-1/2 -translate-y-1/2 items-center justify-center p-1"
+                onMouseDown={(event) => handleMouseDown("right", event)}
+                onTouchStart={(event) => handleTouchStart("right", event)}
               >
-                <div className="w-5 h-5 sm:w-4 sm:h-4 rounded-full bg-white border-2 border-blue-400 shadow cursor-e-resize hover:border-blue-500 hover:scale-110 transition-transform" />
+                <div className="h-5 w-5 cursor-e-resize rounded-full border-2 border-blue-400 bg-white shadow transition-transform hover:scale-110 hover:border-blue-500 sm:h-4 sm:w-4" />
               </div>
             </div>
 
-            {/* Month labels */}
-            <div
-              className="absolute inset-x-0 flex"
-              style={{ top: 44, height: 28 }}
-            >
-              {monthMarkers.map((m) => {
+            <div className="absolute inset-x-0 flex" style={{ top: 44, height: 28 }}>
+              {monthMarkers.map((monthMarker) => {
                 const isActive =
-                  dayToIndex(startOfMonth(m.date)) <= endIdx &&
-                  dayToIndex(endOfMonth(m.date)) >= startIdx;
+                  dayToIndex(startOfMonth(monthMarker.date)) <= endIndex &&
+                  dayToIndex(endOfMonth(monthMarker.date)) >= startIndex;
+
                 return (
                   <button
-                    key={m.index}
-                    onClick={() => handleMonthClick(m.date)}
                     className={cn(
                       "absolute text-xs whitespace-nowrap transition-all duration-200",
                       isActive
                         ? "font-bold text-gray-800"
-                        : "font-normal text-gray-400 hover:text-gray-600"
+                        : "font-normal text-gray-400 hover:text-gray-600",
                     )}
-                    style={{ left: m.index * TICK_WIDTH }}
+                    key={monthMarker.index}
+                    onClick={() => handleMonthClick(monthMarker.date)}
+                    style={{ left: monthMarker.index * TICK_WIDTH }}
                   >
-                    {m.label}
+                    {monthMarker.label}
                   </button>
                 );
               })}

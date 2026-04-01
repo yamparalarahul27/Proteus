@@ -16,13 +16,23 @@ export default function BottomSheet({
   content: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const contentRef = useRef<HTMLPreElement>(null);
+  const copiedResetTimeout = useRef<number | null>(null);
 
   const copyToClipboard = useCallback(async () => {
+    if (copiedResetTimeout.current) {
+      window.clearTimeout(copiedResetTimeout.current);
+    }
+
+    const resetCopiedState = () => {
+      copiedResetTimeout.current = window.setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    };
+
     try {
       await navigator.clipboard.writeText(content);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      resetCopiedState();
     } catch {
       // Fallback for older browsers
       const textarea = document.createElement("textarea");
@@ -34,16 +44,34 @@ export default function BottomSheet({
       document.execCommand("copy");
       document.body.removeChild(textarea);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      resetCopiedState();
     }
   }, [content]);
 
   // Auto-copy when opened
   useEffect(() => {
+    let timeout: number | undefined;
+
     if (isOpen) {
-      copyToClipboard();
+      timeout = window.setTimeout(() => {
+        void copyToClipboard();
+      }, 0);
     }
-  }, [isOpen, copyToClipboard]);
+
+    return () => {
+      if (timeout) {
+        window.clearTimeout(timeout);
+      }
+    };
+  }, [copyToClipboard, isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (copiedResetTimeout.current) {
+        window.clearTimeout(copiedResetTimeout.current);
+      }
+    };
+  }, []);
 
   // Close on Escape
   useEffect(() => {
@@ -105,10 +133,7 @@ export default function BottomSheet({
 
         {/* Content */}
         <div className="overflow-auto p-5" style={{ maxHeight: "calc(70vh - 80px)" }}>
-          <pre
-            ref={contentRef}
-            className="text-xs text-gray-700 whitespace-pre-wrap break-words font-mono leading-relaxed"
-          >
+          <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words font-mono leading-relaxed">
             {content}
           </pre>
         </div>

@@ -3,159 +3,33 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft,
-  ArrowLeftRight,
-  ArrowUpDown,
-  BadgeInfo,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Settings2,
-} from "lucide-react";
+  confettiPieces,
+  easeOutExpo,
+  FORM_AMOUNT,
+  formatPending,
+  PENDING_SECONDS,
+  PROGRESS_CIRCUMFERENCE,
+  RECEIVE_AMOUNT,
+  REVIEW_SECONDS,
+  timelineItems,
+  type Scene,
+} from "./AnimatedSwapFlow.constants";
+import {
+  BackArrowIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  EthereumIcon,
+  ForwardArrowIcon,
+  GearIcon,
+  InfoIcon,
+  PolygonIcon,
+  ProtocolIcon,
+  SwapDirectionIcon,
+  SwapHorizontalIcon,
+  TetherIcon,
+} from "./AnimatedSwapFlowIcons";
 import styles from "./AnimatedSwapFlow.module.css";
-
-type Scene = "form" | "review" | "pending" | "success";
-
-type TimelineItem = {
-  label: string;
-  value: string;
-  accent?: "green";
-  last?: boolean;
-};
-
-type ConfettiPiece = {
-  color: string;
-  delay: string;
-  duration: string;
-  left: string;
-  rotate: string;
-  size: string;
-  shape: string;
-};
-
-const FORM_AMOUNT = 253;
-const RECEIVE_AMOUNT = 456.26;
-const PENDING_SECONDS = 4;
-const REVIEW_SECONDS = 20;
-const PROGRESS_CIRCUMFERENCE = 678.58;
-
-const timelineItems: TimelineItem[] = [
-  { label: "Network fee", value: "Free", accent: "green" },
-  { label: "Gas reimbursement", value: "20.45 USDT ($20.43)" },
-  { label: "Matcha fee 0.1%", value: "2.45 USDT ($2.43)" },
-  { label: "Amount we convert", value: "236 USDT" },
-  { label: "You will receive exactly", value: "236 MATIC", last: true },
-];
-
-const confettiPieces: ConfettiPiece[] = [
-  {
-    color: "#ffcab0",
-    delay: "0.05s",
-    duration: "4.6s",
-    left: "6%",
-    rotate: "-8deg",
-    size: "10px",
-    shape: "50%",
-  },
-  {
-    color: "#f6d582",
-    delay: "0.3s",
-    duration: "3.8s",
-    left: "15%",
-    rotate: "22deg",
-    size: "8px",
-    shape: "2px",
-  },
-  {
-    color: "#b8d8ff",
-    delay: "0.55s",
-    duration: "4.9s",
-    left: "24%",
-    rotate: "-12deg",
-    size: "11px",
-    shape: "50%",
-  },
-  {
-    color: "#ffd3de",
-    delay: "0.15s",
-    duration: "4.2s",
-    left: "32%",
-    rotate: "18deg",
-    size: "10px",
-    shape: "2px",
-  },
-  {
-    color: "#d6f2ce",
-    delay: "0.9s",
-    duration: "3.6s",
-    left: "40%",
-    rotate: "9deg",
-    size: "9px",
-    shape: "50%",
-  },
-  {
-    color: "#ffddb0",
-    delay: "0.45s",
-    duration: "4.5s",
-    left: "48%",
-    rotate: "-18deg",
-    size: "14px",
-    shape: "2px",
-  },
-  {
-    color: "#c7dbff",
-    delay: "0.1s",
-    duration: "5.2s",
-    left: "58%",
-    rotate: "15deg",
-    size: "8px",
-    shape: "50%",
-  },
-  {
-    color: "#ffe2a7",
-    delay: "0.8s",
-    duration: "4.3s",
-    left: "66%",
-    rotate: "-7deg",
-    size: "12px",
-    shape: "2px",
-  },
-  {
-    color: "#ffd1d1",
-    delay: "0.25s",
-    duration: "3.9s",
-    left: "76%",
-    rotate: "28deg",
-    size: "9px",
-    shape: "50%",
-  },
-  {
-    color: "#bdeaf4",
-    delay: "0.65s",
-    duration: "4.7s",
-    left: "86%",
-    rotate: "-25deg",
-    size: "7px",
-    shape: "2px",
-  },
-  {
-    color: "#f9ce98",
-    delay: "1.1s",
-    duration: "4.1s",
-    left: "93%",
-    rotate: "14deg",
-    size: "15px",
-    shape: "2px",
-  },
-];
-
-function formatPending(seconds: number) {
-  return `00:0${seconds}`;
-}
-
-function easeOutExpo(progress: number) {
-  return progress === 1 ? 1 : 1 - 2 ** (-10 * progress);
-}
+import successStyles from "./AnimatedSwapFlowSuccess.module.css";
 
 function BadgeButton({
   icon,
@@ -223,7 +97,7 @@ function FormLine({
 
       <div className={`${styles.amountRow} ${placeholder ? styles.placeholderAmount : ""}`}>
         <span>{amount}</span>
-        <span className={styles.cursor} aria-hidden="true" />
+        <span aria-hidden="true" className={styles.cursor} />
       </div>
     </div>
   );
@@ -237,6 +111,7 @@ export function AnimatedSwapFlow() {
   const [quoteSeconds, setQuoteSeconds] = useState(REVIEW_SECONDS);
   const [pendingSeconds, setPendingSeconds] = useState(PENDING_SECONDS);
   const [pendingProgress, setPendingProgress] = useState(1);
+
   const timeoutsRef = useRef<number[]>([]);
   const rafsRef = useRef<number[]>([]);
 
@@ -361,9 +236,7 @@ export function AnimatedSwapFlow() {
     return clearScheduledWork;
   }, [scene]);
 
-  useEffect(() => {
-    return clearScheduledWork;
-  }, []);
+  useEffect(() => clearScheduledWork, []);
 
   const strokeOffset = PROGRESS_CIRCUMFERENCE * (1 - pendingProgress);
 
@@ -371,10 +244,10 @@ export function AnimatedSwapFlow() {
     <div className={styles.shell}>
       <div className={styles.frame}>
         <section
+          aria-hidden={scene !== "form"}
           className={`${styles.scene} ${
             scene === "form" ? styles.sceneActive : styles.sceneHidden
           }`}
-          aria-hidden={scene !== "form"}
         >
           <div className={styles.topBar}>
             <div className={styles.tabRow}>
@@ -393,11 +266,11 @@ export function AnimatedSwapFlow() {
           <div className={styles.divider} />
 
           <FormLine
-            label="Pay with"
-            balance="1.464"
             amount={typedAmount}
-            placeholder={!quoteReady}
+            balance="1.464"
+            label="Pay with"
             pill={<BadgeButton icon={<TetherIcon />} label="USDT" tone="mint" />}
+            placeholder={!quoteReady}
           >
             <div className={styles.quickPills}>
               <Pill onClick={() => populateQuote(FORM_AMOUNT, RECEIVE_AMOUNT)}>MAX</Pill>
@@ -419,18 +292,14 @@ export function AnimatedSwapFlow() {
           <div className={styles.divider} />
 
           <FormLine
-            label="You receive"
-            balance="42.4"
             amount={receiveAmount}
-            placeholder={!quoteReady}
+            balance="42.4"
+            label="You receive"
             pill={<BadgeButton icon={<PolygonIcon />} label="MATIC" tone="lavender" />}
+            placeholder={!quoteReady}
           />
 
-          <div
-            className={`${styles.quoteMeta} ${
-              quoteReady ? styles.quoteMetaVisible : ""
-            }`}
-          >
+          <div className={`${styles.quoteMeta} ${quoteReady ? styles.quoteMetaVisible : ""}`}>
             <div className={styles.metaRow}>
               <span>Transaction type</span>
               <span className={styles.metaValue}>
@@ -469,10 +338,10 @@ export function AnimatedSwapFlow() {
         </section>
 
         <section
+          aria-hidden={scene !== "review"}
           className={`${styles.scene} ${
             scene === "review" ? styles.sceneActive : styles.sceneHidden
           }`}
-          aria-hidden={scene !== "review"}
         >
           <div className={styles.reviewHeader}>
             <button
@@ -561,20 +430,15 @@ export function AnimatedSwapFlow() {
         </section>
 
         <section
+          aria-hidden={scene !== "pending"}
           className={`${styles.scene} ${
             scene === "pending" ? styles.sceneActive : styles.sceneHidden
           }`}
-          aria-hidden={scene !== "pending"}
         >
           <div className={styles.pendingStage}>
             <div className={styles.timerWrap}>
-              <svg className={styles.timerSvg} viewBox="0 0 240 240" aria-hidden="true">
-                <circle
-                  className={styles.timerTrack}
-                  cx="120"
-                  cy="120"
-                  r="108"
-                />
+              <svg aria-hidden="true" className={styles.timerSvg} viewBox="0 0 240 240">
+                <circle className={styles.timerTrack} cx="120" cy="120" r="108" />
                 <circle
                   className={styles.timerProgress}
                   cx="120"
@@ -602,17 +466,19 @@ export function AnimatedSwapFlow() {
         </section>
 
         <section
+          aria-hidden={scene !== "success"}
           className={`${styles.scene} ${
             scene === "success" ? styles.sceneActive : styles.sceneHidden
           }`}
-          aria-hidden={scene !== "success"}
         >
-          <div className={styles.successScene}>
-            <div className={styles.successGlow} />
-            <div className={styles.confettiField} aria-hidden="true">
+          <div className={successStyles.successScene}>
+            <div className={successStyles.successGlow} />
+            <div aria-hidden="true" className={successStyles.confettiField}>
               {confettiPieces.map((piece) => (
                 <span
-                  className={styles.confettiPiece}
+                  className={`${successStyles.confettiPiece} ${
+                    scene === "success" ? "" : successStyles.confettiPaused
+                  }`}
                   key={`${piece.left}-${piece.delay}`}
                   style={
                     {
@@ -630,32 +496,32 @@ export function AnimatedSwapFlow() {
               ))}
             </div>
 
-            <div className={styles.successBadge}>
+            <div className={successStyles.successBadge}>
               <CheckIcon />
             </div>
 
-            <div className={styles.successText}>
+            <div className={successStyles.successText}>
               <h3>Transaction completed!</h3>
-              <p className={styles.swapSummary}>
-                <span className={styles.summaryToken}>
+              <p className={successStyles.swapSummary}>
+                <span className={successStyles.summaryToken}>
                   <PolygonIcon compact />
                   12,321 MATIC
                 </span>
-                <span className={styles.summaryConnector}>to</span>
-                <span className={styles.summaryToken}>
+                <span className={successStyles.summaryConnector}>to</span>
+                <span className={successStyles.summaryToken}>
                   <EthereumIcon compact />
                   15,424 ETH
                 </span>
               </p>
-              <p className={styles.providerCaption}>Swapped Via 0x Protocol</p>
+              <p className={successStyles.providerCaption}>Swapped Via 0x Protocol</p>
             </div>
 
-            <div className={styles.successActions}>
-              <button className={`${styles.secondaryCta}`} type="button">
+            <div className={successStyles.successActions}>
+              <button className={styles.secondaryCta} type="button">
                 See Details
               </button>
               <button
-                className={`${styles.primaryCta} ${styles.primaryCtaReady} ${styles.successPrimary}`}
+                className={`${styles.primaryCta} ${styles.primaryCtaReady} ${successStyles.successPrimary}`}
                 onClick={() => {
                   setTypedAmount("0.00");
                   setReceiveAmount("0.00");
@@ -675,135 +541,4 @@ export function AnimatedSwapFlow() {
       </div>
     </div>
   );
-}
-
-function GearIcon() {
-  return <Settings2 size={18} strokeWidth={2} />;
-}
-
-function ChevronDownIcon() {
-  return <ChevronDown size={16} strokeWidth={2.25} />;
-}
-
-function SwapDirectionIcon() {
-  return <ArrowUpDown size={18} strokeWidth={2.1} />;
-}
-
-function BackArrowIcon() {
-  return <ArrowLeft size={20} strokeWidth={2.2} />;
-}
-
-function ForwardArrowIcon() {
-  return <ChevronRight size={22} strokeWidth={2.25} />;
-}
-
-function InfoIcon() {
-  return <BadgeInfo size={14} strokeWidth={2} />;
-}
-
-function CheckIcon() {
-  return <Check color="#00b67a" size={42} strokeWidth={2.8} />;
-}
-
-function TetherIcon({ compact = false }: { compact?: boolean }) {
-  const size = compact ? 14 : 22;
-
-  return (
-    <svg
-      fill="none"
-      height={size}
-      viewBox="0 0 32 32"
-      width={size}
-    >
-      <circle cx="16" cy="16" fill="#32c48d" stroke="#23a16f" strokeWidth="1.6" r="14" />
-      <path
-        d="M8.5 10.4h15M16 10.4v12.2M11.5 14.7c2.6 1 6.4 1 9 0"
-        stroke="white"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2.5"
-      />
-    </svg>
-  );
-}
-
-function PolygonIcon({
-  big = false,
-  compact = false,
-}: {
-  big?: boolean;
-  compact?: boolean;
-}) {
-  const size = big ? 48 : compact ? 14 : 22;
-
-  return (
-    <svg fill="none" height={size} viewBox="0 0 32 32" width={size}>
-      <defs>
-        <linearGradient id="polygon-gradient" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stopColor="#7b5cff" />
-          <stop offset="100%" stopColor="#9d4ff0" />
-        </linearGradient>
-      </defs>
-      <circle
-        cx="16"
-        cy="16"
-        fill="url(#polygon-gradient)"
-        stroke="#7047e6"
-        strokeWidth="1.6"
-        r="14"
-      />
-      <path
-        d="m12 11.1-4 2.3v5.2l4 2.3 3.9-2.3v-4.8l4.1-2.3 3.9 2.3v5.2l-3.9 2.3-4.1-2.3"
-        stroke="white"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2.2"
-      />
-    </svg>
-  );
-}
-
-function EthereumIcon({
-  big = false,
-  compact = false,
-}: {
-  big?: boolean;
-  compact?: boolean;
-}) {
-  const size = big ? 48 : compact ? 14 : 22;
-
-  return (
-    <svg fill="none" height={size} viewBox="0 0 32 32" width={size}>
-      <defs>
-        <linearGradient id="eth-gradient" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stopColor="#89a5ff" />
-          <stop offset="100%" stopColor="#4b70f0" />
-        </linearGradient>
-      </defs>
-      <circle cx="16" cy="16" fill="url(#eth-gradient)" stroke="#6b82eb" strokeWidth="1.4" r="14" />
-      <path
-        d="m16 5.6 6 10.2-6-3.5-6 3.5L16 5.6Zm0 20.8-6-9 6 3.6 6-3.6-6 9Z"
-        fill="white"
-      />
-    </svg>
-  );
-}
-
-function ProtocolIcon() {
-  return (
-    <svg fill="none" height="20" viewBox="0 0 28 28" width="20">
-      <rect fill="#12131a" height="28" rx="14" width="28" />
-      <path
-        d="M14 7.2 18.8 10v8L14 20.8 9.2 18v-8L14 7.2Zm0 0v13.6M9.2 10 18.8 18M18.8 10 9.2 18"
-        stroke="white"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.6"
-      />
-    </svg>
-  );
-}
-
-function SwapHorizontalIcon() {
-  return <ArrowLeftRight size={16} strokeWidth={2.1} />;
 }
