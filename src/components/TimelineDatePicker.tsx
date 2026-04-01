@@ -874,14 +874,16 @@ export default function TimelineDatePicker({
               <div
                 onMouseDown={(e) => handleMouseDown("left", e)}
                 onTouchStart={(e) => handleTouchStart("left", e)}
-                className="absolute left-0 top-0 bottom-0 w-5 sm:w-3 -ml-1 cursor-ew-resize z-10"
-              />
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 flex items-center justify-center p-1 cursor-ew-resize"
+              >
+                <div className="w-5 h-5 sm:w-4 sm:h-4 rounded-full bg-white border-2 border-blue-400 shadow hover:border-blue-500 hover:scale-110 transition-transform" />
+              </div>
 
               {/* Draggable body */}
               <div
                 onMouseDown={(e) => handleMouseDown("body", e)}
                 onTouchStart={(e) => handleTouchStart("body", e)}
-                className="absolute inset-0 mx-5 sm:mx-3 flex items-center justify-center cursor-grab active:cursor-grabbing"
+                className="absolute inset-0 mx-4 flex items-center justify-center cursor-grab active:cursor-grabbing"
               >
                 <span className="text-[10px] font-semibold text-gray-600 whitespace-nowrap pointer-events-none">
                   {dayCount} {dayCount === 1 ? "Day" : "Days"}
