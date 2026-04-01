@@ -147,7 +147,7 @@ function HalfYearPanel({
                   disabled={isFuture}
                   onClick={() => onSelect(s, clampedEnd)}
                   className={cn(
-                    "px-4 py-2 rounded-lg text-sm transition-all",
+                    "px-4 py-2.5 sm:py-2 rounded-lg text-sm transition-all",
                     isFuture && "opacity-40 cursor-not-allowed",
                     isSelected
                       ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
@@ -200,7 +200,7 @@ function QuarterPanel({
                   disabled={isFuture}
                   onClick={() => onSelect(s, clampedEnd)}
                   className={cn(
-                    "px-3 py-2 rounded-lg text-sm transition-all",
+                    "px-3 py-2.5 sm:py-2 rounded-lg text-sm transition-all",
                     isFuture && "opacity-40 cursor-not-allowed",
                     isSelected
                       ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
@@ -256,7 +256,7 @@ function MonthPanel({
                   disabled={isFuture}
                   onClick={() => onSelect(s, clampedEnd)}
                   className={cn(
-                    "px-2 py-1.5 rounded-lg text-sm transition-all",
+                    "px-2 py-2 sm:py-1.5 rounded-lg text-sm transition-all",
                     isFuture && "opacity-40 cursor-not-allowed",
                     isSelected
                       ? "bg-blue-50 border-2 border-blue-400 text-blue-700 font-semibold"
@@ -306,15 +306,15 @@ function DayPanel({
         <div className="flex gap-1">
           <button
             onClick={() => setViewMonth((v) => subMonths(v, 1))}
-            className="p-1 rounded hover:bg-gray-100 text-gray-500"
+            className="p-2 sm:p-1 rounded hover:bg-gray-100 text-gray-500"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={18} />
           </button>
           <button
             onClick={() => setViewMonth((v) => addMonths(v, 1))}
-            className="p-1 rounded hover:bg-gray-100 text-gray-500"
+            className="p-2 sm:p-1 rounded hover:bg-gray-100 text-gray-500"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={18} />
           </button>
         </div>
       </div>
@@ -335,7 +335,7 @@ function DayPanel({
       <div className="grid grid-cols-7 gap-0">
         {cells.map((day, i) => {
           if (day === null) {
-            return <div key={`blank-${i}`} className="h-9" />;
+            return <div key={`blank-${i}`} className="h-10 sm:h-9" />;
           }
           const date = new Date(
             viewMonth.getFullYear(),
@@ -355,7 +355,7 @@ function DayPanel({
               disabled={isFuture}
               onClick={() => onSelect(date, date)}
               className={cn(
-                "h-9 flex items-center justify-center rounded-full text-sm transition-all",
+                "h-10 sm:h-9 flex items-center justify-center rounded-full text-sm transition-all",
                 isFuture && "opacity-30 cursor-not-allowed",
                 isSelected &&
                   "bg-blue-500 text-white font-semibold",
@@ -673,7 +673,7 @@ export default function TimelineDatePicker({
     >
       {/* Row 1: Text Input + Presets */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-        <div className="relative flex-1 max-w-xs">
+        <div className="relative flex-1 sm:max-w-xs">
           <input
             type="text"
             className={cn(
@@ -736,7 +736,7 @@ export default function TimelineDatePicker({
               )
             }
             className={cn(
-              "px-3 py-1.5 text-xs whitespace-nowrap transition-all duration-200 border-b-2 -mb-px",
+              "px-3 py-2.5 sm:py-1.5 text-xs whitespace-nowrap transition-all duration-200 border-b-2 -mb-px",
               activeGranularity === tab.key
                 ? "border-blue-500 text-blue-600 font-semibold"
                 : "border-transparent text-gray-400 hover:text-gray-600"
