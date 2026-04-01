@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Undo2 } from "lucide-react";
+import ComponentShell from "@/components/ComponentShell";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,6 +70,19 @@ const nftCollections: NftCollection[] = [
     volume: "123",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+const CODE_CONTENT = `// NFT Collections Table component
+// A sortable table displaying NFT collection data with columns for
+// volume, day change, floor price, owners, and supply.
+// Built with React state for sort key/direction and Tailwind CSS.`;
+
+const PROMPT_CONTENT = `Create a sortable NFT collections table component in Next.js with Tailwind CSS.
+The table should display collection image, name, 24h volume, 1-day percentage change,
+floor price, owners count, and supply. Each column header should be clickable to sort
+ascending/descending. Use color coding for positive (green) and negative (red) changes.`;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -265,28 +278,8 @@ function NftTableSection() {
 // ---------------------------------------------------------------------------
 export default function NftTablePage() {
   return (
-    <div className="min-h-screen bg-[var(--background)] flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-[var(--background)] border-b border-gray-200/60 px-4 py-3">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <Undo2 size={16} />
-          <span>Back</span>
-        </Link>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 gap-5">
-        <h1 className="text-xl font-semibold text-gray-800">
-          NFT Collections Table
-        </h1>
-        <NftTableSection />
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-200/60 px-4 py-4" />
-    </div>
+    <ComponentShell title="NFT Collections Table" codeContent={CODE_CONTENT} promptContent={PROMPT_CONTENT}>
+      <NftTableSection />
+    </ComponentShell>
   );
 }

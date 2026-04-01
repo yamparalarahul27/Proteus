@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Undo2 } from "lucide-react";
+import ComponentShell from "@/components/ComponentShell";
 
 type Trend = "up" | "down";
 type Chain = { icon: string; id: string; label: string };
@@ -66,6 +66,10 @@ const defiCards: DefiCard[] = [
     tvl: "$9.83B",
   },
 ];
+
+const CODE_CONTENT = `https://github.com/anthropics/Proteus/blob/main/src/app/deficard/page.tsx`;
+
+const PROMPT_CONTENT = `Build a horizontal scrolling DeFi protocol card strip. Each card shows the protocol icon, name, ticker symbol, current price with a trend pill (green up / red down), TVL, a chain selector pill, and a bookmark/favorite toggle. Cards gain a purple border and glow when favorited. Display a heading with the protocol count and a "View More" button above the strip.`;
 
 function TrendPill({ trend, value }: { trend: Trend; value: string }) {
   const positive = trend === "up";
@@ -218,61 +222,36 @@ export default function DefiCardPage() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-white px-6 py-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-        >
-          <Undo2 className="h-4 w-4" />
-          <span>Back</span>
-        </Link>
-      </header>
-
-      {/* Main */}
-      <main className="flex flex-1 flex-col items-center px-6 py-12">
-        <h1 className="mb-8 text-2xl font-semibold text-gray-900">
-          DeFi Card Component
-        </h1>
-
-        <section className="w-full max-w-4xl">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-[20px] font-semibold leading-7 text-[#1f2937]">
-                Popular Decentralised Finance
-              </h2>
-              <p className="text-[14px] text-[#6b7280]">
-                {filteredCards.length} protocols on {activeChain.label}
-              </p>
-            </div>
-            <button
-              className="rounded-[8px] border border-[#e5e7eb] px-4 py-2 text-[14px] font-medium text-[#374151] hover:bg-[#f9fafb]"
-              type="button"
-            >
-              View More
-            </button>
+    <ComponentShell title="DeFi Card Component" codeContent={CODE_CONTENT} promptContent={PROMPT_CONTENT}>
+      <section className="w-full max-w-4xl">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-[20px] font-semibold leading-7 text-[#1f2937]">
+              Popular Decentralised Finance
+            </h2>
+            <p className="text-[14px] text-[#6b7280]">
+              {filteredCards.length} protocols on {activeChain.label}
+            </p>
           </div>
+          <button
+            className="rounded-[8px] border border-[#e5e7eb] px-4 py-2 text-[14px] font-medium text-[#374151] hover:bg-[#f9fafb]"
+            type="button"
+          >
+            View More
+          </button>
+        </div>
 
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {filteredCards.map((card) => (
-              <DefiCardItem
-                card={card}
-                favorite={favoriteSlugs.has(card.slug)}
-                key={card.slug}
-                onToggleFavorite={handleToggleFavorite}
-              />
-            ))}
-          </div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t bg-white px-6 py-4">
-        <p className="text-center text-sm text-gray-500">
-          DeFi Card Component Demo
-        </p>
-      </footer>
-    </div>
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {filteredCards.map((card) => (
+            <DefiCardItem
+              card={card}
+              favorite={favoriteSlugs.has(card.slug)}
+              key={card.slug}
+              onToggleFavorite={handleToggleFavorite}
+            />
+          ))}
+        </div>
+      </section>
+    </ComponentShell>
   );
 }

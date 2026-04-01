@@ -50,6 +50,18 @@ const components = [
       "Timeline ruler with drag-to-resize, NL text input, and granularity panels.",
     color: "#3B82F6",
   },
+  {
+    href: "/transactions",
+    title: "Transaction Toast",
+    description: "Animated transaction status toast — processing, failed, and success states.",
+    color: "#7C3AED",
+  },
+  {
+    href: "/swap-flow",
+    title: "Swap Flow",
+    description: "Animated token swap interface with step-by-step flow visualization.",
+    color: "#EC4899",
+  },
 ];
 
 export default function CollectionPage() {
