@@ -74,6 +74,12 @@ const components = [
     description: "Animated loading spinners based on mathematical curves — rose, Lissajous, hypotrochoid, and more.",
     color: "#8162ff",
   },
+  {
+    href: "/friportfolio",
+    title: "FRI Portfolio Dashboard",
+    description: "Cyberpunk-themed AI agent portfolio with arc reactor, terminal, diagnostics, and directive panels.",
+    color: "#5d3ae9",
+  },
 ];
 
 export default function CollectionPage() {
