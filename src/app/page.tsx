@@ -68,6 +68,12 @@ const components = [
     description: "Split-tone avatar builder with swatch picker, shuffle action, and custom color add.",
     color: "#9B4EE8",
   },
+  {
+    href: "/mathcurveloaders",
+    title: "Math Curve Loaders",
+    description: "Animated loading spinners based on mathematical curves — rose, Lissajous, hypotrochoid, and more.",
+    color: "#8162ff",
+  },
 ];
 
 export default function CollectionPage() {
