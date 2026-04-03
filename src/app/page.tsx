@@ -2,6 +2,25 @@ import Link from "next/link";
 
 const components = [
   {
+    href: "/datepicker",
+    title: "Date Picker",
+    description:
+      "Timeline ruler with drag-to-resize, NL text input, and granularity panels.",
+    color: "#3B82F6",
+  },
+  {
+    href: "/friportfolio",
+    title: "FRI Portfolio Dashboard",
+    description: "Cyberpunk-themed AI agent portfolio with arc reactor, terminal, diagnostics, and directive panels.",
+    color: "#5d3ae9",
+  },
+  {
+    href: "/mathcurveloaders",
+    title: "Math Curve Loaders",
+    description: "Animated loading spinners based on mathematical curves — rose, Lissajous, hypotrochoid, and more.",
+    color: "#8162ff",
+  },
+  {
     href: "/navbar",
     title: "Navbar",
     description: "App logo, navigation links, search input, and user menu with dropdown.",
@@ -44,13 +63,6 @@ const components = [
     color: "#374151",
   },
   {
-    href: "/datepicker",
-    title: "Date Picker",
-    description:
-      "Timeline ruler with drag-to-resize, NL text input, and granularity panels.",
-    color: "#3B82F6",
-  },
-  {
     href: "/transactions",
     title: "Transaction Toast",
     description: "Animated transaction status toast — processing, failed, and success states.",
@@ -67,18 +79,6 @@ const components = [
     title: "Avatar Creator",
     description: "Split-tone avatar builder with swatch picker, shuffle action, and custom color add.",
     color: "#9B4EE8",
-  },
-  {
-    href: "/mathcurveloaders",
-    title: "Math Curve Loaders",
-    description: "Animated loading spinners based on mathematical curves — rose, Lissajous, hypotrochoid, and more.",
-    color: "#8162ff",
-  },
-  {
-    href: "/friportfolio",
-    title: "FRI Portfolio Dashboard",
-    description: "Cyberpunk-themed AI agent portfolio with arc reactor, terminal, diagnostics, and directive panels.",
-    color: "#5d3ae9",
   },
 ];
 
