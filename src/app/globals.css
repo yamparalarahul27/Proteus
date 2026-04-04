@@ -39,6 +39,11 @@ button {
   font-family: var(--font-roboto), sans-serif;
 }
 
+.font-pixel {
+  font-family: var(--font-pixel), "Courier New", monospace;
+  letter-spacing: 0.05em;
+}
+
 .proteus-panel {
   background: #ffffff;
   border: 1px solid var(--proteus-card-border);

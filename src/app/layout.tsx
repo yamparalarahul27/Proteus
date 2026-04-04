@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Belanosima, Inter, Roboto } from "next/font/google";
+import { Belanosima, Inter, Roboto, VT323 } from "next/font/google";
 import { AgentationDevtools } from "@/components/AgentationDevtools";
 import "./globals.css";
 
@@ -20,6 +20,12 @@ const belanosima = Belanosima({
   weight: "400",
 });
 
+const pixel = VT323({
+  subsets: ["latin"],
+  variable: "--font-pixel",
+  weight: "400",
+});
+
 export const metadata: Metadata = {
   title: "Proteus",
   description: "Proteus is a cross-chain DeFi dashboard.",
@@ -33,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${roboto.variable} ${belanosima.variable} antialiased`}
+        className={`${inter.variable} ${roboto.variable} ${belanosima.variable} ${pixel.variable} antialiased`}
       >
         {children}
         <AgentationDevtools />

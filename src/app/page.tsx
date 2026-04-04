@@ -11,6 +11,49 @@ type ComponentCard = {
 
 const components: ComponentCard[] = [
   {
+    href: "/agentstatus",
+    title: "Agent Status Panels",
+    description: "Thinking-stage dotted progress rails plus vesting/volume/temperature control cards.",
+    color: "#4B5563",
+    status: "WIP",
+  },
+  {
+    href: "/tabpatterns",
+    title: "Tab Patterns",
+    description: "Modes/personas, primary section tabs, and lightweight filter tab sets.",
+    color: "#374151",
+    status: "WIP",
+  },
+  {
+    href: "/agenttoasts",
+    title: "Agent System Toasts",
+    description: "Four large system toasts: run complete, override warning, paused, and delete confirmation.",
+    color: "#111827",
+    status: "WIP",
+  },
+  {
+    href: "/tokenselector",
+    title: "Token Selector Modal",
+    description: "Searchable token list modal with top-by-volume rows and keyboard hints.",
+    color: "#4B5563",
+    status: "WIP",
+  },
+  {
+    href: "/timeframe",
+    title: "Timeframe Selector",
+    description: "Segmented timeframe pill with 24H, 7D, 30D, 90D, and 1Y options.",
+    color: "#6B7280",
+    status: "WIP",
+  },
+  {
+    href: "/boneyard",
+    title: "Boneyard Skeleton",
+    description:
+      "Pixel-perfect loading skeleton for a blog card using boneyard-js, with source credit.",
+    color: "#57534E",
+    status: "WIP",
+  },
+  {
     href: "/datepicker",
     title: "Date Picker",
     description:
@@ -65,6 +108,7 @@ const components: ComponentCard[] = [
     title: "NFT Collections Table",
     description: "Sortable table with volume, floor price, owners, supply columns.",
     color: "#22A06B",
+    status: "WIP",
   },
   {
     href: "/gascard",
