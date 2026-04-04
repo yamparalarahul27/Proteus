@@ -236,71 +236,218 @@ type CurveType = {
   formula: string;
 };
 
-function rose(ctx, t, w, h) {
-  const cx = w / 2, cy = h / 2;
-  const r = Math.min(w, h) * 0.35, k = 5, trail = 120;
+function rose(ctx: CanvasRenderingContext2D, t: number, w: number, h: number) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const r = Math.min(w, h) * 0.35;
+  const k = 5;
+  const trail = 120;
   for (let i = 0; i < trail; i++) {
     const angle = t * 4 + (i / trail) * Math.PI * 2;
     const rr = r * Math.cos(k * angle);
     const x = cx + rr * Math.cos(angle);
     const y = cy + rr * Math.sin(angle);
     const alpha = i / trail;
+    const size = 2 + alpha * 3;
     ctx.beginPath();
-    ctx.arc(x, y, 2 + alpha * 3, 0, Math.PI * 2);
+    ctx.arc(x, y, size, 0, Math.PI * 2);
     ctx.fillStyle = \`rgba(129, 98, 255, \${alpha * 0.9})\`;
     ctx.fill();
   }
 }
 
-function lissajous(ctx, t, w, h) {
-  const cx = w / 2, cy = h / 2;
-  const rx = Math.min(w, h) * 0.35, ry = rx;
+function lissajous(ctx: CanvasRenderingContext2D, t: number, w: number, h: number) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const a = 3;
+  const b = 2;
+  const rx = Math.min(w, h) * 0.35;
+  const ry = Math.min(w, h) * 0.35;
   const trail = 150;
   for (let i = 0; i < trail; i++) {
     const angle = t * 3 + (i / trail) * Math.PI * 2;
-    const x = cx + rx * Math.sin(3 * angle + Math.PI / 2);
-    const y = cy + ry * Math.sin(2 * angle);
+    const x = cx + rx * Math.sin(a * angle + Math.PI / 2);
+    const y = cy + ry * Math.sin(b * angle);
     const alpha = i / trail;
+    const size = 2 + alpha * 3;
     ctx.beginPath();
-    ctx.arc(x, y, 2 + alpha * 3, 0, Math.PI * 2);
+    ctx.arc(x, y, size, 0, Math.PI * 2);
     ctx.fillStyle = \`rgba(236, 72, 153, \${alpha * 0.9})\`;
     ctx.fill();
   }
 }
 
-// ... other curve functions follow the same particle-trail pattern
+function hypotrochoid(ctx: CanvasRenderingContext2D, t: number, w: number, h: number) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const R = Math.min(w, h) * 0.25;
+  const rr = R * 0.4;
+  const d = R * 0.6;
+  const trail = 180;
+  for (let i = 0; i < trail; i++) {
+    const angle = t * 2 + (i / trail) * Math.PI * 6;
+    const x = cx + (R - rr) * Math.cos(angle) + d * Math.cos(((R - rr) / rr) * angle);
+    const y = cy + (R - rr) * Math.sin(angle) - d * Math.sin(((R - rr) / rr) * angle);
+    const alpha = i / trail;
+    const size = 2 + alpha * 3;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fillStyle = \`rgba(34, 160, 107, \${alpha * 0.9})\`;
+    ctx.fill();
+  }
+}
 
-function CurveCanvas({ curve, size = 180 }) {
-  const canvasRef = useRef(null);
-  const animRef = useRef(0);
+function cardioid(ctx: CanvasRenderingContext2D, t: number, w: number, h: number) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const a = Math.min(w, h) * 0.16;
+  const trail = 120;
+  for (let i = 0; i < trail; i++) {
+    const angle = t * 3 + (i / trail) * Math.PI * 2;
+    const r = 2 * a * (1 + Math.cos(angle));
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    const alpha = i / trail;
+    const size = 2 + alpha * 3;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fillStyle = \`rgba(229, 105, 16, \${alpha * 0.9})\`;
+    ctx.fill();
+  }
+}
+
+function cassiniOval(ctx: CanvasRenderingContext2D, t: number, w: number, h: number) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const a = Math.min(w, h) * 0.22;
+  const b = a * (0.9 + 0.15 * Math.sin(t));
+  const trail = 140;
+  for (let i = 0; i < trail; i++) {
+    const angle = t * 2.5 + (i / trail) * Math.PI * 2;
+    const cos2 = Math.cos(2 * angle);
+    const inner = a * a * cos2 + Math.sqrt(Math.abs(b * b * b * b - a * a * a * a * (1 - cos2 * cos2)));
+    const r = Math.sqrt(Math.abs(inner));
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    const alpha = i / trail;
+    const size = 2 + alpha * 3;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fillStyle = \`rgba(29, 122, 252, \${alpha * 0.9})\`;
+    ctx.fill();
+  }
+}
+
+function fourierPath(ctx: CanvasRenderingContext2D, t: number, w: number, h: number) {
+  const cx = w / 2;
+  const cy = h / 2;
+  const scale = Math.min(w, h) * 0.3;
+  const trail = 160;
+  for (let i = 0; i < trail; i++) {
+    const angle = t * 2 + (i / trail) * Math.PI * 2;
+    const x = cx + scale * (0.5 * Math.cos(angle) + 0.3 * Math.cos(3 * angle) + 0.15 * Math.cos(5 * angle));
+    const y = cy + scale * (0.5 * Math.sin(angle) + 0.3 * Math.sin(3 * angle) + 0.15 * Math.sin(7 * angle));
+    const alpha = i / trail;
+    const size = 2 + alpha * 3;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fillStyle = \`rgba(124, 58, 237, \${alpha * 0.9})\`;
+    ctx.fill();
+  }
+}
+
+const curves: CurveType[] = [
+  { id: "rose", label: "Rose Curve", description: "Petal-shaped polar curve", color: "#8162ff", draw: rose, formula: "r = cos(k\\u03B8)" },
+  { id: "lissajous", label: "Lissajous", description: "Harmonic motion pattern", color: "#EC4899", draw: lissajous, formula: "x = sin(at+\\u03B4), y = sin(bt)" },
+  { id: "hypotrochoid", label: "Hypotrochoid", description: "Spirograph-like curve", color: "#22A06B", draw: hypotrochoid, formula: "x = (R\\u2212r)cos\\u03B8 + d\\u00B7cos((R\\u2212r)\\u03B8/r)" },
+  { id: "cardioid", label: "Cardioid", description: "Heart-shaped curve", color: "#E56910", draw: cardioid, formula: "r = 2a(1 + cos\\u03B8)" },
+  { id: "cassini", label: "Cassini Oval", description: "Product-of-distances curve", color: "#1D7AFC", draw: cassiniOval, formula: "((x\\u2212a)\\u00B2+y\\u00B2)((x+a)\\u00B2+y\\u00B2) = b\\u2074" },
+  { id: "fourier", label: "Fourier Path", description: "Superposed harmonics", color: "#7C3AED", draw: fourierPath, formula: "x = \\u03A3 a\\u2099cos(n\\u03B8), y = \\u03A3 b\\u2099sin(n\\u03B8)" },
+];
+
+function CurveCanvas({ curve, size = 180 }: { curve: CurveType; size?: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = size * dpr;
     canvas.height = size * dpr;
     ctx.scale(dpr, dpr);
-
     let startTime = performance.now();
-    function animate(now) {
+    function animate(now: number) {
       const t = (now - startTime) / 1000;
-      ctx.clearRect(0, 0, size, size);
-      curve.draw(ctx, t, size, size);
+      ctx!.clearRect(0, 0, size, size);
+      curve.draw(ctx!, t, size, size);
       animRef.current = requestAnimationFrame(animate);
     }
     animRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animRef.current);
   }, [curve, size]);
 
-  return <canvas ref={canvasRef} style={{ width: size, height: size }} />;
+  return (
+    <canvas ref={canvasRef} className="rounded-xl" style={{ width: size, height: size, background: "#fafafa" }} />
+  );
 }
 
 export default function MathCurveLoadersPage() {
-  const [selected, setSelected] = useState(curves[0]);
+  const [selected, setSelected] = useState<CurveType>(curves[0]);
+
   return (
-    <div>
-      {/* Curve selector pills + canvas + formula display */}
+    <div className="flex flex-col items-center gap-5 w-full max-w-[600px]">
+      {/* Curve selector pills */}
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {curves.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setSelected(c)}
+            className={\`rounded-full px-3 py-1.5 text-[12px] font-medium transition-all \${
+              selected.id === c.id
+                ? "text-white shadow-md"
+                : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
+            }\`}
+            style={selected.id === c.id ? { backgroundColor: c.color } : undefined}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Main preview */}
+      <div className="rounded-[16px] border border-gray-100 bg-white shadow-sm p-6 flex flex-col items-center gap-4">
+        <CurveCanvas curve={selected} size={240} />
+        <div className="text-center">
+          <p className="text-[15px] font-semibold text-[#1f2937]">{selected.label}</p>
+          <p className="text-[12px] text-[#6b7280] mt-0.5">{selected.description}</p>
+          <p
+            className="mt-2 inline-block rounded-md px-3 py-1 text-[12px] font-mono font-medium"
+            style={{ backgroundColor: selected.color + "14", color: selected.color }}
+          >
+            {selected.formula}
+          </p>
+        </div>
+      </div>
+
+      {/* Grid of all curves */}
+      <div className="grid grid-cols-3 gap-3 w-full">
+        {curves.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setSelected(c)}
+            className={\`rounded-[12px] border border-gray-100 bg-white shadow-sm p-3 flex flex-col items-center gap-2 transition-all \${
+              selected.id === c.id ? "ring-2 ring-offset-1" : "hover:shadow-md"
+            }\`}
+            style={selected.id === c.id ? { outlineColor: c.color, borderColor: c.color } : undefined}
+          >
+            <CurveCanvas curve={c} size={80} />
+            <span className="text-[11px] font-medium text-[#374151]">{c.label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }`;
