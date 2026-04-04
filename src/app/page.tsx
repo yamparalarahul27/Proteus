@@ -151,7 +151,7 @@ export default function CollectionPage() {
             priority
           />
           <p className="mt-2 text-sm text-gray-500">
-            Component collection — click any card to view the interactive demo.
+            Component Collection by Yamparala Rahul [Design Engineer]
           </p>
         </div>
       </header>
