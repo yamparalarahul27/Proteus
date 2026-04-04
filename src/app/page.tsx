@@ -9,6 +9,12 @@ const components = [
     color: "#3B82F6",
   },
   {
+    href: "/svgtoc",
+    title: "SVG Curved TOC",
+    description: "Interactive table of contents with cubic Bezier connectors, clip-path animation, and offset-path demos.",
+    color: "#8162ff",
+  },
+  {
     href: "/friportfolio",
     title: "FRI Portfolio Dashboard",
     description: "Cyberpunk-themed AI agent portfolio with arc reactor, terminal, diagnostics, and directive panels.",
