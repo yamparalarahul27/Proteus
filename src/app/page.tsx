@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const components = [
   {
@@ -86,6 +87,18 @@ const components = [
     description: "Split-tone avatar builder with swatch picker, shuffle action, and custom color add.",
     color: "#9B4EE8",
   },
+  {
+    href: "/pnlcalendar",
+    title: "PnL Calendar",
+    description: "Monthly trading calendar with positive/negative day heatmap and paged navigation.",
+    color: "#0EA5A4",
+  },
+  {
+    href: "/peektext",
+    title: "Peektext",
+    description: "Inline text hover reveal that expands a tiny image with smooth transition.",
+    color: "#E11D48",
+  },
 ];
 
 export default function CollectionPage() {
@@ -94,16 +107,14 @@ export default function CollectionPage() {
       {/* Header */}
       <header className="border-b border-gray-200/60 px-6 py-6 sm:px-8">
         <div className="mx-auto max-w-5xl">
-          <div className="flex items-center gap-[10px]">
-            <div className="relative flex h-[31.794px] w-[31.794px] items-center justify-center rounded-[7.337px] bg-gradient-to-b from-[#8162ff] to-[#5d3ae9]">
-              <span className="font-brand text-[24.914px] leading-[1.3] tracking-[0.7474px] text-white">
-                Pr
-              </span>
-            </div>
-            <span className="text-[17.046px] font-semibold tracking-[0.5114px] text-[#1f2937]">
-              Proteus
-            </span>
-          </div>
+          <Image
+            src="/proteus-logo.svg"
+            alt="Proteus logo"
+            width={1329}
+            height={400}
+            className="h-auto w-[180px] sm:w-[220px]"
+            priority
+          />
           <p className="mt-2 text-sm text-gray-500">
             Component collection — click any card to view the interactive demo.
           </p>

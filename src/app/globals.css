@@ -6,6 +6,9 @@
   --proteus-border: #e5e7eb;
   --proteus-card-border: #f3f4f6;
   --proteus-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --accent: #e11d48;
 }
 
 @theme inline {

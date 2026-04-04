@@ -1,9 +1,8 @@
-import { Check, Clock3 } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type TransactionToastStage =
   | "processing"
-  | "failed"
   | "successFocus"
   | "successSettled";
 
@@ -13,33 +12,26 @@ type TransactionToastProps = {
 };
 
 type StageConfig = {
-  ariaLive: "assertive" | "polite";
+  ariaLive: "polite";
   body: string;
-  compact?: boolean;
-  role: "alert" | "status";
-  showSuccessAccent?: boolean;
+  role: "status";
+  showSuccessAccent: boolean;
   title: string;
-  tone: "neutral" | "success";
+  tone: "processing" | "success";
 };
 
 const stageMap: Record<TransactionToastStage, StageConfig> = {
-  failed: {
-    ariaLive: "assertive",
-    body: "A deposit of 30.10 POL hasn't completed. Your funds are still safe.",
-    role: "alert",
-    title: "Deposit didn't complete",
-    tone: "neutral",
-  },
   processing: {
     ariaLive: "polite",
-    body: "A deposit of 30.10 POL has been registered and is awaiting confirmation.",
+    body: "A deposit of 30.10 USDC has been registered and is awaiting confirmation.",
     role: "status",
+    showSuccessAccent: false,
     title: "Deposit processing...",
-    tone: "neutral",
+    tone: "processing",
   },
   successFocus: {
     ariaLive: "polite",
-    body: "A deposit of 30.10 POL has landed in your account.",
+    body: "A deposit of 30.10 USDC has been credited to your account.",
     role: "status",
     showSuccessAccent: true,
     title: "Deposit completed",
@@ -47,26 +39,23 @@ const stageMap: Record<TransactionToastStage, StageConfig> = {
   },
   successSettled: {
     ariaLive: "polite",
-    body: "A deposit of 30.10 POL has been credited to your account.",
-    compact: true,
+    body: "A deposit of 30.10 USDC has been credited to your account.",
     role: "status",
+    showSuccessAccent: false,
     title: "Deposit completed",
     tone: "success",
   },
 };
 
-function DepositCoinIcon({ compact = false }: { compact?: boolean }) {
+function DepositCoinIcon() {
   return (
     <span
       aria-hidden="true"
-      className={cn(
-        "relative inline-flex items-center justify-center rounded-full bg-[#2f80df] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_5px_10px_rgba(47,128,223,0.2)]",
-        compact ? "size-[30px]" : "size-9",
-      )}
+      className="relative inline-flex size-[48px] items-center justify-center rounded-full bg-[#3990e5] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_10px_18px_rgba(57,144,229,0.26)]"
     >
       <svg
         aria-hidden="true"
-        className={compact ? "size-5" : "size-6"}
+        className="size-[32px]"
         viewBox="0 0 24 24"
       >
         <circle
@@ -120,72 +109,47 @@ export function TransactionToast({
   return (
     <div
       className={cn(
-        "relative inline-flex w-full max-w-[516px] pr-3 pt-3",
-        config.compact && "max-w-[432px] pr-2.5 pt-2.5",
+        "relative w-full max-w-[400px] transition-all duration-300 ease-out",
         className,
       )}
     >
-      <div
-        aria-hidden="true"
-        className={cn(
-          "absolute inset-[0_0_12px_26px] rounded-[23px] border border-[#e9ecf1] bg-white/70 shadow-[0_16px_26px_rgba(15,23,42,0.04),0_4px_10px_rgba(15,23,42,0.04)]",
-          config.compact && "inset-[0_0_10px_20px] rounded-[20px]",
-        )}
-      />
-
       <section
         aria-live={config.ariaLive}
-        className={cn(
-          "relative z-10 flex w-full items-start gap-4 overflow-hidden rounded-[23px] border border-[#e8ebf0] bg-white px-[18px] py-[18px] shadow-[0_20px_30px_rgba(15,23,42,0.07),0_6px_14px_rgba(15,23,42,0.05)]",
-          config.compact && "gap-3.5 rounded-[20px] px-[18px] py-4",
-        )}
+        className="relative z-10 flex w-full items-start gap-3.5 overflow-hidden rounded-[20px] border border-[#d9dde4] bg-[linear-gradient(145deg,rgba(255,255,255,0.97),rgba(249,250,252,0.95))] px-4 py-4 shadow-[0_20px_48px_rgba(15,23,42,0.15)] backdrop-blur-xl sm:gap-4 sm:px-5 sm:py-4.5"
         role={config.role}
       >
-        {config.showSuccessAccent ? (
-          <div
-            aria-hidden="true"
-            className="absolute inset-y-[10px] left-[10px] w-32 rounded-[18px] bg-[#ddf5b3]/80 sm:w-32"
-          />
-        ) : null}
-
         <div
+          aria-hidden="true"
           className={cn(
-            "relative z-10 inline-flex size-11 shrink-0 items-center justify-center",
-            config.compact && "size-9",
+            "pointer-events-none absolute -left-6 top-1/2 h-[150px] w-[150px] -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(134,239,172,0.45)_0%,_rgba(134,239,172,0.16)_44%,_rgba(134,239,172,0)_78%)] blur-xl transition-opacity duration-500",
+            config.showSuccessAccent ? "opacity-100" : "opacity-0",
           )}
-        >
-          <DepositCoinIcon compact={config.compact} />
+        />
+
+        <div className="relative z-10 inline-flex size-[52px] shrink-0 items-center justify-center">
+          <DepositCoinIcon />
           <span
             aria-hidden="true"
             className={cn(
-              "absolute bottom-[-1px] right-[-2px] inline-flex size-[19px] items-center justify-center rounded-full border-2 border-white bg-[#5f6368] text-white shadow-[0_4px_10px_rgba(15,23,42,0.16)]",
-              config.compact && "size-[17px]",
-              config.tone === "success" && "bg-[#76d01a]",
+              "absolute bottom-[1px] right-[1px] inline-flex size-[27px] items-center justify-center rounded-full border-[2.5px] border-white shadow-[0_6px_14px_rgba(15,23,42,0.18)]",
+              config.tone === "success"
+                ? "bg-[#7ad70f] text-white"
+                : "bg-[#eef0f2] text-[#7a7f87]",
             )}
           >
             {config.tone === "success" ? (
-              <Check size={11} strokeWidth={3} />
+              <Check size={14} strokeWidth={3.2} />
             ) : (
-              <Clock3 size={10} strokeWidth={2.4} />
+              <span className="size-[13px] animate-spin rounded-full border-[2.1px] border-[#7a7f87] border-r-transparent border-b-transparent" />
             )}
           </span>
         </div>
 
         <div className="relative z-10 min-w-0 flex-1">
-          <p
-            className={cn(
-              "m-0 text-[15px] leading-[1.25] font-semibold text-[#1d2432]",
-              config.compact && "text-xs leading-[1.2]",
-            )}
-          >
+          <p className="m-0 text-[17px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#1f2937] sm:text-[18px]">
             {config.title}
           </p>
-          <p
-            className={cn(
-              "mt-1.5 max-w-[28ch] text-sm leading-[1.33] text-[#6f7684] text-pretty",
-              config.compact && "mt-1 max-w-[31ch] text-xs leading-[1.28]",
-            )}
-          >
+          <p className="mt-1 w-full text-[14px] leading-[1.35] text-[#6b7280] sm:mt-1.5 sm:text-[15px]">
             {config.body}
           </p>
         </div>
