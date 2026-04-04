@@ -732,7 +732,10 @@ export default function SvgTocPage() {
   return (
     <div className="flex flex-col items-center gap-8 w-full max-w-[700px]">
       <div className="proteus-panel rounded-[16px] p-8 flex flex-col items-center gap-4">
-        <p className="text-[13px] font-semibold text-[#1f2937]">Interactive Table of Contents</p>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="h-[3px] w-[3px] rounded-full bg-[#8162ff]" />
+          <p className="text-[13px] font-semibold text-[#1f2937]">Interactive Table of Contents</p>
+        </div>
         <p className="text-[11px] text-[#9ca3af] -mt-3 mb-2">Click any item — or wait for auto-cycle</p>
         <AutoScrollToc />
       </div>
@@ -749,6 +752,52 @@ export default function SvgTocPage() {
       <div className="proteus-panel rounded-[12px] p-5 w-full flex flex-col items-center">
         <OffsetDistanceDemo />
       </div>
+
+      <div className="proteus-panel rounded-[12px] p-5 w-full">
+        <p className="text-[13px] font-semibold text-[#1f2937] mb-3">Techniques from the article</p>
+        <ul className="space-y-2 text-[12px] text-[#6b7280] leading-relaxed">
+          <li className="flex gap-2">
+            <span className="text-[#8162ff] font-bold shrink-0">1.</span>
+            <span>
+              <strong className="text-[#374151]">Cubic Bezier curves</strong>{" "}
+              — the SVG <code className="text-[11px] bg-gray-100 rounded px-1">C</code> command
+              creates smooth S-curves between TOC items at different indent depths.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="text-[#8162ff] font-bold shrink-0">2.</span>
+            <span>
+              <strong className="text-[#374151]">clip-path animation</strong>{" "}
+              — use <code className="text-[11px] bg-gray-100 rounded px-1">clip-path: inset()</code> to
+              mask the highlighted SVG, avoiding costly layout recalculation.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="text-[#8162ff] font-bold shrink-0">3.</span>
+            <span>
+              <strong className="text-[#374151]">Thumb box positioning</strong>{" "}
+              — a small circle at the thumb edge following the curved path.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="text-[#8162ff] font-bold shrink-0">4.</span>
+            <span>
+              <strong className="text-[#374151]">offset-path</strong> — CSS property that pins an
+              element to an SVG path using{" "}
+              <code className="text-[11px] bg-gray-100 rounded px-1">offset-distance</code>.
+            </span>
+          </li>
+        </ul>
+      </div>
+
+      <p className="text-[11px] text-[#9ca3af]">
+        Based on{" "}
+        <a href="https://www.fuma-nama.dev/blog/svg-art-2" target="_blank" rel="noopener noreferrer"
+          className="underline hover:text-[#6b7280]">Some Nice Things with SVG (Part 2)</a>
+        {" "}by{" "}
+        <a href="https://x.com/fuma_nama" target="_blank" rel="noopener noreferrer"
+          className="underline hover:text-[#6b7280]">@fuma_nama</a>
+      </p>
     </div>
   );
 }`;
