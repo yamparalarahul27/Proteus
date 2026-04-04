@@ -51,35 +51,105 @@ State: startDate, endDate, viewportOffset, activePreset, inputValue, activeGranu
 Tech: React Next.js + Tailwind. useRef + onMouseDown/Move/Up + touch events for drag logic. No external date-picker libraries. date-fns for date math.`;
 
 const CODE_CONTENT = `// ============================================
-// File: src/components/TimelineDatePicker.tsx
+// Timeline Date Picker — Multi-file Component
 // ============================================
-// Main component with timeline ruler, draggable selection window,
-// text input with NL parsing, and granularity panels (Day/Month/Quarter/Half-year/Year).
-// Dependencies: date-fns, lucide-react, tailwindcss
 //
-// File: src/lib/parseDateInput.ts
-// ============================================
-// Pure function that parses natural language date input.
-// Supports: "yesterday", "today", "last N days", "Q1-Q4", "H1/H2",
-// year (2025), "next/last/this year", month names, "month day", etc.
+// File structure:
+//   src/components/TimelineDatePicker.tsx             — Main component
+//   src/components/timeline-date-picker/constants.ts  — Config, helpers, types
+//   src/components/timeline-date-picker/panels.tsx    — Granularity selection panels
+//   src/lib/parseDateInput.ts                         — Natural language date parser
 //
-// File: src/app/datepicker/page.tsx
-// ============================================
-// Page with Calendar icon toggle, title, credits, copy buttons.
+// Dependencies: react, date-fns, lucide-react, tailwindcss (cn utility)
 //
 // Usage:
 //   import TimelineDatePicker from "@/components/TimelineDatePicker";
 //   <TimelineDatePicker onChange={({ startDate, endDate }) => { ... }} />
 //
-// Install: npm install date-fns lucide-react clsx tailwind-merge
-//
-// Full source code available at:
-// https://github.com/yamparalarahul27/Proteus/tree/main/src/components/TimelineDatePicker.tsx
-// https://github.com/yamparalarahul27/Proteus/tree/main/src/lib/parseDateInput.ts
 // ============================================
-
-// To get the full component code, visit the repository above or
-// copy the files directly from the src/components and src/lib directories.`;
+// page.tsx (wrapper)
+// ============================================
+// "use client";
+// import { useState } from "react";
+// import TimelineDatePicker from "@/components/TimelineDatePicker";
+//
+// export default function DatePickerPage() {
+//   const [isVisible, setIsVisible] = useState(true);
+//   return (
+//     <div>
+//       <button onClick={() => setIsVisible(v => !v)}>
+//         <Calendar size={18} />
+//       </button>
+//       <TimelineDatePicker />
+//     </div>
+//   );
+// }
+//
+// ============================================
+// constants.ts (key exports)
+// ============================================
+// TICK_WIDTH = 4, TOTAL_DAYS = 365, RULER_WIDTH = TOTAL_DAYS * TICK_WIDTH
+// Preset type: "thisMonth" | "7d" | "30d" | "90d" | null
+// GRANULARITY_TABS: day, month, quarter, half-year, year
+// PRESET_OPTIONS: This month, Last 7D, 30D, 90D
+// dayToIndex(day) — converts Date to ruler pixel index
+// indexToDay(index) — converts ruler index back to Date
+// getMonthMarkers() — generates month label positions for the ruler
+//
+// ============================================
+// TimelineDatePicker.tsx (main component, abbreviated)
+// ============================================
+// export default function TimelineDatePicker({ onChange }) {
+//   const [startDate, setStartDate] = useState(() => startOfMonth(today));
+//   const [endDate, setEndDate] = useState(() => today);
+//   const [activePreset, setActivePreset] = useState("thisMonth");
+//   const [isDragging, setIsDragging] = useState(false);
+//   const [inputValue, setInputValue] = useState("");
+//   const [isFocused, setIsFocused] = useState(false);
+//   const [activeGranularity, setActiveGranularity] = useState(null);
+//
+//   // Drag system: useRef for dragType ("body"|"left"|"right"),
+//   //   dragStartX, dragStartStartDate, dragStartEndDate, dragStartScroll
+//   // applyDragDelta(clientX) — calculates day delta from pixel movement,
+//   //   clamps to bounds, updates start/end dates based on drag type
+//   // Mouse/touch event listeners added/removed in useEffect when isDragging
+//
+//   // Key handlers:
+//   //   applyPreset(preset) — sets date range for thisMonth/7d/30d/90d
+//   //   handleMonthClick(monthDate) — snaps to full calendar month
+//   //   handleBack() — scrolls ruler left by ~30 days
+//   //   handleNaturalLanguageInput(text) — calls parseDateInput, applies result
+//   //   handlePanelSelect(start, end) — applies from granularity panel
+//
+//   // Render:
+//   //   - Text input (shows dateLabel when blurred, NL input when focused)
+//   //   - Preset buttons row
+//   //   - Granularity tabs (Day/Month/Quarter/Half-year/Year)
+//   //   - Collapsible panel area (DayPanel, MonthPanel, QuarterPanel, etc.)
+//   //   - Back chevron + scrollable ruler with ticks + selection window
+//   //   - Selection window: left handle, draggable body, right handle
+//   //   - Month labels below ruler (bold when overlapping selection)
+// }
+//
+// ============================================
+// panels.tsx (granularity selection panels)
+// ============================================
+// YearPanel — grid of year buttons (currentYear-5 to +2), selected highlight
+// HalfYearPanel — H1/H2 buttons grouped by year
+// QuarterPanel — Q1-Q4 buttons grouped by year (grid cols-4)
+// MonthPanel — Jan-Dec buttons grouped by year (grid cols-4 sm:cols-6)
+// DayPanel — full calendar grid with month nav (ChevronLeft/Right),
+//   weekday headers, day buttons with today ring, weekend styling, future disabled
+//
+// ============================================
+// parseDateInput.ts (natural language parser)
+// ============================================
+// export function parseDateInput(input, referenceDate?): ParseResult | null
+// Supports: "today", "yesterday", "last N days",
+//   "q1"-"q4" (optional year), "h1"/"h2" (optional year),
+//   "next/last/this year", 4-digit year, "this/last month",
+//   "month day year", "month day", "month year", month name alone
+// Returns: { startDate, endDate, granularity } or null`;
 
 export default function DatePickerPage() {
   const [isVisible, setIsVisible] = useState(true);
