@@ -180,6 +180,13 @@ const components: ComponentCard[] = [
     color: "#E11D48",
     status: "Latest",
   },
+  {
+    href: "/folder",
+    title: "Folder",
+    description: "macOS-style folder icons with glossy gradients, color variants, hover lift, and size options.",
+    color: "#5aaaf5",
+    status: "Latest",
+  },
 ];
 
 const statusPriority: Record<NonNullable<ComponentCard["status"]>, number> = {
