@@ -11,6 +11,13 @@ type ComponentCard = {
 
 const components: ComponentCard[] = [
   {
+    href: "/floatingdock",
+    title: "Floating Component Dock",
+    description: "Bottom-center floating utility dock with component menu, copy actions, and theme switcher.",
+    color: "#1F2937",
+    status: "WIP",
+  },
+  {
     href: "/agentstatus",
     title: "Agent Status Panels",
     description: "Thinking-stage dotted progress rails plus vesting/volume/temperature control cards.",
