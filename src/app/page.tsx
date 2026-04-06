@@ -11,6 +11,13 @@ type ComponentCard = {
 
 const components: ComponentCard[] = [
   {
+    href: "/numberflow",
+    title: "NumberFlow",
+    description: "Animated number transitions — currency, percent, compact, countdown, continuous, trend, and stepper variants.",
+    color: "#8162ff",
+    status: "Latest",
+  },
+  {
     href: "/floatingdock",
     title: "Floating Component Dock",
     description: "Bottom-center floating utility dock with component menu, copy actions, and theme switcher.",
