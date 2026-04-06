@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Code, MessageSquare, Undo2 } from "lucide-react";
+import { Undo2 } from "lucide-react";
 import BottomSheet from "@/components/BottomSheet";
+import FloatingComponentDock from "@/components/FloatingComponentDock";
+import { componentNavLinks } from "@/lib/componentNavLinks";
 
 export default function ComponentShell({
   title,
@@ -17,14 +19,41 @@ export default function ComponentShell({
   children: React.ReactNode;
 }) {
   const [sheetOpen, setSheetOpen] = useState<"code" | "prompt" | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") {
+      return "light";
+    }
+
+    const storedTheme = window.localStorage.getItem("proteus-shell-theme");
+    return storedTheme === "dark" ? "dark" : "light";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem("proteus-shell-theme", theme);
+  }, [theme]);
+
+  const isDark = theme === "dark";
 
   return (
-    <div className="min-h-screen bg-[var(--background)] flex flex-col">
+    <div
+      className={`
+        min-h-screen flex flex-col transition-colors
+        ${isDark ? "bg-[#0f1117]" : "bg-[var(--background)]"}
+      `}
+    >
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-[var(--background)] border-b border-gray-200/60 px-4 py-3">
+      <header
+        className={`
+          sticky top-0 z-30 border-b px-4 py-3 transition-colors
+          ${isDark ? "border-[#242834] bg-[#0f1117]" : "border-gray-200/60 bg-[var(--background)]"}
+        `}
+      >
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          className={`
+            inline-flex items-center gap-2 text-sm transition-colors
+            ${isDark ? "text-[#aab1be] hover:text-[#e4e7ee]" : "text-gray-600 hover:text-gray-900"}
+          `}
         >
           <Undo2 size={16} />
           <span>Back</span>
@@ -32,30 +61,20 @@ export default function ComponentShell({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 gap-5">
-        <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
+      <main className="flex-1 flex flex-col items-center justify-center gap-5 p-6 pb-28 sm:p-8 sm:pb-32">
+        <h1 className={`text-xl font-semibold ${isDark ? "text-[#e4e7ee]" : "text-gray-800"}`}>
+          {title}
+        </h1>
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200/60 px-4 py-4">
-        <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={() => setSheetOpen("code")}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 shadow-sm hover:border-gray-300 hover:shadow transition-all"
-          >
-            <Code size={14} />
-            Copy Code (NextJs)
-          </button>
-          <button
-            onClick={() => setSheetOpen("prompt")}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 shadow-sm hover:border-gray-300 hover:shadow transition-all"
-          >
-            <MessageSquare size={14} />
-            Copy Prompt
-          </button>
-        </div>
-      </footer>
+      <FloatingComponentDock
+        componentLinks={componentNavLinks}
+        onCopyCode={() => setSheetOpen("code")}
+        onCopyPrompt={() => setSheetOpen("prompt")}
+        onThemeChange={setTheme}
+        theme={theme}
+      />
 
       {/* Bottom Sheets */}
       <BottomSheet
