@@ -14,34 +14,34 @@ export default function FolderPage() {
       promptContent={promptContent}
     >
       {/* Primary trio from reference */}
-      <div className="flex flex-col items-center gap-10">
+      <div className="flex w-full max-w-2xl flex-col items-center gap-10 px-2">
         <FolderGrid>
-          <Folder color="dark" size={140} />
-          <Folder color="blue" size={140} />
-          <Folder color="yellow" size={140} />
+          <Folder color="dark" mobileSize={100} desktopSize={140} />
+          <Folder color="blue" mobileSize={100} desktopSize={140} />
+          <Folder color="yellow" mobileSize={100} desktopSize={140} />
         </FolderGrid>
 
         {/* All color variants with labels */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex w-full flex-col items-center gap-3">
           <p className="text-sm font-medium text-gray-500">All Variants</p>
           <FolderGrid>
-            <Folder color="dark" name="Documents" />
-            <Folder color="blue" name="Projects" />
-            <Folder color="yellow" name="Favorites" />
-            <Folder color="green" name="Downloads" />
-            <Folder color="red" name="Important" />
-            <Folder color="purple" name="Archive" />
+            <Folder color="dark" name="Documents" mobileSize={80} />
+            <Folder color="blue" name="Projects" mobileSize={80} />
+            <Folder color="yellow" name="Favorites" mobileSize={80} />
+            <Folder color="green" name="Downloads" mobileSize={80} />
+            <Folder color="red" name="Important" mobileSize={80} />
+            <Folder color="purple" name="Archive" mobileSize={80} />
           </FolderGrid>
         </div>
 
         {/* Size variants */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex w-full flex-col items-center gap-3">
           <p className="text-sm font-medium text-gray-500">Sizes</p>
-          <div className="flex items-end justify-center gap-6">
+          <div className="flex flex-wrap items-end justify-center gap-4 sm:gap-6">
             <Folder color="blue" size={60} name="Small" />
-            <Folder color="blue" size={90} name="Medium" />
-            <Folder color="blue" size={120} name="Default" />
-            <Folder color="blue" size={160} name="Large" />
+            <Folder color="blue" mobileSize={70} desktopSize={90} name="Medium" />
+            <Folder color="blue" mobileSize={90} desktopSize={120} name="Default" />
+            <Folder color="blue" mobileSize={110} desktopSize={160} name="Large" />
           </div>
         </div>
       </div>

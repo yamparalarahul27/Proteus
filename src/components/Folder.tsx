@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type FolderColor = "dark" | "blue" | "yellow" | "green" | "red" | "purple";
 
 interface FolderProps {
   color?: FolderColor;
   name?: string;
+  /** Fixed size (used when mobileSize/desktopSize aren't set) */
   size?: number;
+  /** Size on screens < 640px. Falls back to `size`. */
+  mobileSize?: number;
+  /** Size on screens >= 640px. Falls back to `size`. */
+  desktopSize?: number;
   onClick?: () => void;
 }
 
@@ -97,23 +102,41 @@ export default function Folder({
   color = "blue",
   name,
   size = 120,
+  mobileSize,
+  desktopSize,
   onClick,
 }: FolderProps) {
   const [hovered, setHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const theme = colorThemes[color];
 
-  const w = size;
-  const h = size * 0.82;
+  // Track viewport for responsive sizing
+  const containerRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  const resolvedSize = isMobile
+    ? (mobileSize ?? size)
+    : (desktopSize ?? size);
+
+  const w = resolvedSize;
+  const h = resolvedSize * 0.82;
   const svgW = 120;
   const svgH = 98;
 
   return (
     <button
+      ref={containerRef}
       type="button"
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="group flex flex-col items-center gap-2 rounded-xl p-3 transition-all duration-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+      className="group flex flex-col items-center gap-1.5 sm:gap-2 rounded-xl p-2 sm:p-3 transition-all duration-200 hover:bg-black/[0.04] active:bg-black/[0.06] dark:hover:bg-white/[0.06] dark:active:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 min-w-[64px] touch-manipulation"
       style={{ cursor: onClick ? "pointer" : "default" }}
     >
       <svg
@@ -218,7 +241,10 @@ export default function Folder({
       </svg>
 
       {name && (
-        <span className="max-w-[120px] truncate text-xs font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors">
+        <span
+          className="truncate text-[11px] sm:text-xs font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors"
+          style={{ maxWidth: Math.max(resolvedSize, 64) }}
+        >
           {name}
         </span>
       )}
@@ -232,7 +258,7 @@ export function FolderGrid({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-center gap-4">
+    <div className="flex flex-wrap items-start justify-center gap-2 sm:gap-4">
       {children}
     </div>
   );
