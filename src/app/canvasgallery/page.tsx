@@ -229,8 +229,8 @@ export default function CanvasGalleryPage() {
       codeContent={codeContent}
       promptContent={promptContent}
     >
-      <div className="h-[75vh] w-full max-w-[1200px] overflow-hidden rounded-2xl border border-gray-200/50 dark:border-white/10">
-        <CanvasGallery items={galleryItems} columns={5} />
+      <div className="h-[65vh] sm:h-[75vh] w-full max-w-[1200px] overflow-hidden rounded-2xl border border-gray-200/50 dark:border-white/10">
+        <CanvasGallery items={galleryItems} columns={5} mobileColumns={3} />
       </div>
     </ComponentShell>
   );
