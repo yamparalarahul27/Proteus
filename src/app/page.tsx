@@ -187,6 +187,13 @@ const components: ComponentCard[] = [
     color: "#5aaaf5",
     status: "Latest",
   },
+  {
+    href: "/canvasgallery",
+    title: "Canvas Gallery",
+    description: "3D image canvas with pan, zoom, click-to-select, side panel, and minimap. Built with React Three Fiber + Drei.",
+    color: "#6366f1",
+    status: "Latest",
+  },
 ];
 
 const statusPriority: Record<NonNullable<ComponentCard["status"]>, number> = {

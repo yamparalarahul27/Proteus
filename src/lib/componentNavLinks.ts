@@ -23,4 +23,5 @@ export const componentNavLinks: Array<{ href: string; label: string }> = [
   { href: "/pnlcalendar", label: "PnL Calendar" },
   { href: "/peektext", label: "Peektext" },
   { href: "/folder", label: "Folder" },
+  { href: "/canvasgallery", label: "Canvas Gallery" },
 ];
