@@ -46,8 +46,13 @@ function useIsMobile(breakpoint = 640) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Rig – camera pan / zoom with inertia                               */
+/*  Rig – camera pan with inertia (no zoom)                            */
 /* ------------------------------------------------------------------ */
+
+const CAMERA_Z = 7;
+const CAMERA_Z_MOBILE = 5;
+const CAMERA_Z_SELECTED = 5.5;
+const CAMERA_Z_SELECTED_MOBILE = 5;
 
 function Rig({
   selectedPosition,
@@ -62,9 +67,9 @@ function Rig({
   const isDragging = useRef(false);
   const previousMouse = useRef({ x: 0, y: 0 });
   const velocity = useRef({ x: 0, y: 0 });
-  const target = useRef({ x: 0, y: 0, z: 8 });
+  const baseZ = isMobile ? CAMERA_Z_MOBILE : CAMERA_Z;
+  const target = useRef({ x: 0, y: 0 });
   const lockedTarget = useRef<{ x: number; y: number; z: number } | null>(null);
-  const pinchDist = useRef<number | null>(null);
 
   // When an item is selected, lock camera target to it
   useEffect(() => {
@@ -72,13 +77,13 @@ function Rig({
       lockedTarget.current = isMobile
         ? {
             x: selectedPosition.x,
-            y: selectedPosition.y + 1.5, // offset up to leave room for bottom panel on mobile
-            z: 5,
+            y: selectedPosition.y + 1.5,
+            z: CAMERA_Z_SELECTED_MOBILE,
           }
         : {
             x: selectedPosition.x - 1.2,
             y: selectedPosition.y,
-            z: 5.5,
+            z: CAMERA_Z_SELECTED,
           };
     } else {
       lockedTarget.current = null;
@@ -89,7 +94,6 @@ function Rig({
     const el = document.getElementById("canvas-gallery-container");
     if (!el) return;
 
-    /* ---------- Pointer (mouse + single-finger touch) ---------- */
     const onPointerDown = (e: PointerEvent) => {
       if (isSelected) return;
       isDragging.current = true;
@@ -112,46 +116,9 @@ function Rig({
       el.style.cursor = isSelected ? "default" : "grab";
     };
 
-    /* ---------- Pinch-to-zoom (two-finger touch) ---------- */
-    const getTouchDist = (e: TouchEvent) => {
-      if (e.touches.length < 2) return null;
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      return Math.hypot(dx, dy);
-    };
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        pinchDist.current = getTouchDist(e);
-      }
-    };
-    const onTouchMove = (e: TouchEvent) => {
-      if (isSelected) return;
-      if (e.touches.length === 2 && pinchDist.current !== null) {
-        const newDist = getTouchDist(e);
-        if (newDist !== null) {
-          const delta = pinchDist.current - newDist;
-          target.current.z = THREE.MathUtils.clamp(
-            target.current.z + delta * 0.02,
-            3,
-            14
-          );
-          pinchDist.current = newDist;
-        }
-      }
-    };
-    const onTouchEnd = () => {
-      pinchDist.current = null;
-    };
-
-    /* ---------- Mouse wheel zoom ---------- */
+    // Block wheel zoom — prevent browser zoom too
     const onWheel = (e: WheelEvent) => {
-      if (isSelected) return;
       e.preventDefault();
-      target.current.z = THREE.MathUtils.clamp(
-        target.current.z + e.deltaY * 0.005,
-        3,
-        14
-      );
     };
 
     el.addEventListener("pointerdown", onPointerDown);
@@ -159,9 +126,6 @@ function Rig({
     el.addEventListener("pointerup", onPointerUp);
     el.addEventListener("pointerleave", onPointerUp);
     el.addEventListener("pointercancel", onPointerUp);
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
-    el.addEventListener("touchend", onTouchEnd);
     el.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
@@ -170,20 +134,22 @@ function Rig({
       el.removeEventListener("pointerup", onPointerUp);
       el.removeEventListener("pointerleave", onPointerUp);
       el.removeEventListener("pointercancel", onPointerUp);
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("wheel", onWheel);
     };
   }, [isSelected, isMobile]);
 
   useFrame(() => {
-    const t = lockedTarget.current ?? target.current;
     const lerpSpeed = lockedTarget.current ? 0.06 : 0.1;
 
-    camera.position.x = THREE.MathUtils.lerp(camera.position.x, t.x, lerpSpeed);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, t.y, lerpSpeed);
-    camera.position.z = THREE.MathUtils.lerp(camera.position.z, t.z, lerpSpeed);
+    if (lockedTarget.current) {
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, lockedTarget.current.x, lerpSpeed);
+      camera.position.y = THREE.MathUtils.lerp(camera.position.y, lockedTarget.current.y, lerpSpeed);
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, lockedTarget.current.z, lerpSpeed);
+    } else {
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, target.current.x, lerpSpeed);
+      camera.position.y = THREE.MathUtils.lerp(camera.position.y, target.current.y, lerpSpeed);
+      camera.position.z = baseZ;
+    }
 
     // Inertia when not dragging and not locked
     if (!isDragging.current && !lockedTarget.current) {
@@ -269,10 +235,10 @@ function ImageCard({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Grid – lays out all images                                         */
+/*  InfiniteGrid – repeating tile grid that follows the camera         */
 /* ------------------------------------------------------------------ */
 
-function Grid({
+function InfiniteGrid({
   items,
   columns,
   gap,
@@ -289,30 +255,79 @@ function Grid({
   selectedId: string | null;
   onSelect: (item: GalleryItem, pos: THREE.Vector3) => void;
 }) {
-  const positions = useMemo(() => {
-    const totalW = columns * itemWidth + (columns - 1) * gap;
-    const offsetX = -totalW / 2 + itemWidth / 2;
+  const { camera } = useThree();
+  const groupRef = useRef<THREE.Group>(null!);
+
+  // Base tile dimensions: columns wide, enough rows to fill the items once
+  const rows = Math.ceil(items.length / columns);
+  const cellW = itemWidth + gap;
+  const cellH = itemHeight + gap;
+  const tileW = columns * cellW; // total width of one tile repeat
+  const tileH = rows * cellH;    // total height of one tile repeat
+
+  // How many tiles to render around the camera (enough to fill viewport + buffer)
+  const tilesX = 3; // -1, 0, +1
+  const tilesY = 3;
+
+  // Compute base positions for one tile (items within a single tile block)
+  const basePositions = useMemo(() => {
+    const offsetX = -tileW / 2 + itemWidth / 2 + gap / 2;
     return items.map((_, i) => {
       const col = i % columns;
       const row = Math.floor(i / columns);
-      const x = offsetX + col * (itemWidth + gap);
-      const y = -(row * (itemHeight + gap));
+      const x = offsetX + col * cellW;
+      const y = -(row * cellH);
       return [x, y, 0] as [number, number, number];
     });
-  }, [items, columns, gap, itemWidth, itemHeight]);
+  }, [items, columns, cellW, cellH, tileW, itemWidth, gap]);
+
+  // Track which tile offset the camera is over, and render a grid of tiles around it
+  const [tileOffset, setTileOffset] = useState({ ox: 0, oy: 0 });
+
+  useFrame(() => {
+    // Determine which tile the camera is currently over
+    const ox = Math.round(camera.position.x / tileW);
+    const oy = Math.round(-camera.position.y / tileH);
+    if (ox !== tileOffset.ox || oy !== tileOffset.oy) {
+      setTileOffset({ ox, oy });
+    }
+  });
+
+  // Generate tile offsets to render
+  const tileOffsets = useMemo(() => {
+    const offsets: { tx: number; ty: number }[] = [];
+    const halfX = Math.floor(tilesX / 2);
+    const halfY = Math.floor(tilesY / 2);
+    for (let dx = -halfX; dx <= halfX; dx++) {
+      for (let dy = -halfY; dy <= halfY; dy++) {
+        offsets.push({
+          tx: tileOffset.ox + dx,
+          ty: tileOffset.oy + dy,
+        });
+      }
+    }
+    return offsets;
+  }, [tileOffset, tilesX, tilesY]);
 
   return (
-    <group>
-      {items.map((item, i) => (
-        <ImageCard
-          key={item.id}
-          item={item}
-          position={positions[i]}
-          width={itemWidth}
-          height={itemHeight}
-          isSelected={selectedId === item.id}
-          onSelect={onSelect}
-        />
+    <group ref={groupRef}>
+      {tileOffsets.map(({ tx, ty }) => (
+        <group
+          key={`${tx},${ty}`}
+          position={[tx * tileW, -ty * tileH, 0]}
+        >
+          {items.map((item, i) => (
+            <ImageCard
+              key={`${tx},${ty}-${item.id}`}
+              item={item}
+              position={basePositions[i]}
+              width={itemWidth}
+              height={itemHeight}
+              isSelected={selectedId === item.id}
+              onSelect={onSelect}
+            />
+          ))}
+        </group>
       ))}
     </group>
   );
@@ -610,87 +625,6 @@ function PanelMeta({ item, isDark }: { item: GalleryItem; isDark: boolean }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Minimap overlay                                                    */
-/* ------------------------------------------------------------------ */
-
-function Minimap({
-  items,
-  columns,
-  gap,
-  itemWidth,
-  itemHeight,
-  selectedId,
-  isDark,
-}: {
-  items: GalleryItem[];
-  columns: number;
-  gap: number;
-  itemWidth: number;
-  itemHeight: number;
-  selectedId: string | null;
-  isDark: boolean;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const dotSize = 4;
-    const dotGap = 3;
-    const mapW = columns * (dotSize + dotGap) - dotGap;
-    const rows = Math.ceil(items.length / columns);
-    const mapH = rows * (dotSize + dotGap) - dotGap;
-
-    canvas.width = mapW + 8;
-    canvas.height = mapH + 8;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    items.forEach((item, i) => {
-      const col = i % columns;
-      const row = Math.floor(i / columns);
-      const x = 4 + col * (dotSize + dotGap);
-      const y = 4 + row * (dotSize + dotGap);
-
-      const isActive = item.id === selectedId;
-      ctx.fillStyle = isActive
-        ? "#6366f1"
-        : isDark
-          ? "rgba(255,255,255,0.25)"
-          : "rgba(0,0,0,0.2)";
-      ctx.beginPath();
-      ctx.roundRect(x, y, dotSize, dotSize, 1);
-      ctx.fill();
-
-      if (isActive) {
-        ctx.strokeStyle = "#6366f1";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.roundRect(x - 2, y - 2, dotSize + 4, dotSize + 4, 2);
-        ctx.stroke();
-      }
-    });
-  }, [items, columns, selectedId, isDark, gap, itemWidth, itemHeight]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className={`
-        fixed bottom-5 left-5 z-40 rounded-lg border p-1
-        ${isDark
-          ? "border-white/10 bg-[#0f1117]/80"
-          : "border-gray-200 bg-white/80"
-        }
-        backdrop-blur-md
-      `}
-    />
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /*  HUD overlay                                                        */
 /* ------------------------------------------------------------------ */
 
@@ -717,7 +651,7 @@ function HUD({
       <Camera size={isMobile ? 11 : 13} />
       <span>{itemCount} items</span>
       <span className="mx-0.5 sm:mx-1 opacity-30">|</span>
-      <span>{isMobile ? "Drag to pan" : "Drag to pan \u00b7 Scroll to zoom"}</span>
+      <span>Drag to pan</span>
     </div>
   );
 }
@@ -773,7 +707,7 @@ export default function CanvasGallery({
         style={{ cursor: selected ? "default" : "grab" }}
       >
         <Canvas
-          camera={{ position: [0, 0, isMobile ? 6 : 8], fov: 50 }}
+          camera={{ position: [0, 0, isMobile ? CAMERA_Z_MOBILE : CAMERA_Z], fov: 50 }}
           dpr={[1, isMobile ? 1.5 : 2]}
           gl={{ antialias: !isMobile, alpha: true }}
           style={{ background: "transparent" }}
@@ -783,7 +717,7 @@ export default function CanvasGallery({
             isSelected={selected !== null}
             isMobile={isMobile}
           />
-          <Grid
+          <InfiniteGrid
             items={items}
             columns={cols}
             gap={g}
@@ -798,17 +732,6 @@ export default function CanvasGallery({
 
       {/* Overlays */}
       <HUD isDark={isDark} itemCount={items.length} isMobile={isMobile} />
-      {!isMobile && (
-        <Minimap
-          items={items}
-          columns={cols}
-          gap={g}
-          itemWidth={w}
-          itemHeight={h}
-          selectedId={selected?.id ?? null}
-          isDark={isDark}
-        />
-      )}
       <SidePanel
         item={selected}
         onClose={handleClose}
