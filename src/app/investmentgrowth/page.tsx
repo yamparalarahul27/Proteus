@@ -1,23 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ComponentShell from "@/components/ComponentShell";
 import styles from "./investmentgrowth.module.css";
 
 const CODE_CONTENT = `https://github.com/anthropics/Proteus/blob/main/src/app/investmentgrowth/page.tsx`;
 
-const PROMPT_CONTENT = `Build a dark-themed compound investment growth chart in Next.js with SVG.
+const PROMPT_CONTENT = `Build a compound investment growth chart in Next.js with SVG.
 
 Requirements:
 - Exponential bar chart showing compound growth over 30 years (8% annual return)
-- Green neon glowing growth line overlaid on dark charcoal bars
+- Green glowing growth line overlaid on bars
 - Interactive slider to adjust one-time deposit amount ($2K-$9K)
+- Chart reacts in real-time as slider moves
+- Final compound value displayed prominently
 - Floating value bubble above slider thumb
 - Ruler-style tick marks with labels below slider
 - Horizontal gridlines with dollar amount labels
 - Year range header and footer labels
-- Dark card container with rounded corners and subtle border
-- Tip glow effect near the highest bar`;
+- Light/dark theme support
+- Card container with rounded corners and subtle border`;
 
 /* ── constants ── */
 const RATE = 0.08;
@@ -60,9 +62,25 @@ function fmtK(v: number) {
   return v >= 1000 ? `$${Math.round(v / 1000)}K` : `$${v}`;
 }
 
+function fmtFull(v: number) {
+  return "$" + Math.round(v).toLocaleString();
+}
+
 /* ── component ── */
 export default function InvestmentGrowthPage() {
   const [deposit, setDeposit] = useState(5000);
+  const [isDark, setIsDark] = useState(true);
+
+  // Read theme from ComponentShell
+  useEffect(() => {
+    const checkTheme = () => {
+      const stored = window.localStorage.getItem("proteus-shell-theme");
+      setIsDark(stored === "dark");
+    };
+    checkTheme();
+    const interval = setInterval(checkTheme, 300);
+    return () => clearInterval(interval);
+  }, []);
 
   const growth = useMemo(() => compound(deposit), [deposit]);
 
@@ -96,21 +114,42 @@ export default function InvestmentGrowthPage() {
   const pct = ((deposit - MIN_DEP) / (MAX_DEP - MIN_DEP)) * 100;
   const startYear = 2025;
 
+  // Theme colors
+  const t = {
+    gridLine: isDark ? "#222" : "#e5e7eb",
+    gridText: isDark ? "#444" : "#9ca3af",
+    headerText: isDark ? "#666" : "#6b7280",
+    barBase: isDark ? [18, 22, 26] : [229, 231, 235],
+    barGreenTip: isDark ? [20, 160, 50] : [20, 140, 40],
+    depositLine: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+    areaFillStart: isDark ? 0.14 : 0.1,
+    lineGradStart: isDark ? "rgba(21,128,61,0.3)" : "rgba(21,128,61,0.2)",
+  };
+
   return (
     <ComponentShell
       title="Investment Growth Chart"
       codeContent={CODE_CONTENT}
       promptContent={PROMPT_CONTENT}
     >
-      <div
-        className="flex min-h-[calc(100vh-64px)] items-center justify-center p-4"
-        style={{ background: "#060606" }}
-      >
-        <div className={styles.card}>
+      <div className="flex items-center justify-center p-4">
+        <div
+          className={`${styles.card} ${isDark ? styles.cardDark : styles.cardLight}`}
+        >
+          {/* ════════ FINAL VALUE ════════ */}
+          <div className={styles.finalValue}>
+            <div className={styles.finalValueAmount}>{fmtFull(peak)}</div>
+            <div
+              className={`${styles.finalValueLabel} ${isDark ? styles.finalValueLabelDark : styles.finalValueLabelLight}`}
+            >
+              after {YEARS} years at {RATE * 100}% annual return
+            </div>
+          </div>
+
           {/* ════════ CHART ════════ */}
           <svg
             viewBox={`0 0 ${W} ${H}`}
-            style={{ display: "block", width: "100%" }}
+            style={{ display: "block", width: "100%", marginTop: 12 }}
           >
             <defs>
               {/* glow around the green line */}
@@ -145,13 +184,17 @@ export default function InvestmentGrowthPage() {
 
               {/* subtle fill under the curve */}
               <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#22c55e" stopOpacity="0.14" />
+                <stop
+                  offset="0%"
+                  stopColor="#22c55e"
+                  stopOpacity={t.areaFillStart}
+                />
                 <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
               </linearGradient>
 
               {/* line color ramp */}
               <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#15803d" stopOpacity="0.3" />
+                <stop offset="0%" stopColor={t.lineGradStart} />
                 <stop offset="50%" stopColor="#22c55e" />
                 <stop offset="100%" stopColor="#86efac" />
               </linearGradient>
@@ -161,7 +204,7 @@ export default function InvestmentGrowthPage() {
             <text
               x={CL}
               y={18}
-              fill="#666"
+              fill={t.headerText}
               fontSize="13"
               fontWeight="500"
               fontFamily="Inter, system-ui, sans-serif"
@@ -171,7 +214,7 @@ export default function InvestmentGrowthPage() {
             <text
               x={CR}
               y={18}
-              fill="#666"
+              fill={t.headerText}
               fontSize="13"
               fontWeight="500"
               textAnchor="end"
@@ -188,14 +231,14 @@ export default function InvestmentGrowthPage() {
                   y1={yOf(val)}
                   x2={CR}
                   y2={yOf(val)}
-                  stroke="#222"
+                  stroke={t.gridLine}
                   strokeWidth="0.7"
                   strokeDasharray={val === 0 ? undefined : "3 4"}
                 />
                 <text
                   x={CL - 8}
                   y={yOf(val) + 4}
-                  fill="#444"
+                  fill={t.gridText}
                   fontSize="11"
                   textAnchor="end"
                   fontFamily="Inter, system-ui, sans-serif"
@@ -207,14 +250,23 @@ export default function InvestmentGrowthPage() {
 
             {/* ── bars ── */}
             {growth.map((val, i) => {
-              const bx = Math.round((CL + i * barStep + (barStep - barW) / 2) * 100) / 100;
+              const bx =
+                Math.round(
+                  (CL + i * barStep + (barStep - barW) / 2) * 100,
+                ) / 100;
               const by = yOf(val);
               const h = Math.round((CB - by) * 100) / 100;
-              // Only the last 2-3 bars get green; rest stay dark charcoal
-              const t = Math.max(0, (i - 26) / 3);
-              const r = Math.round(18 + t * 20);
-              const g = Math.round(22 + t * 160);
-              const b = Math.round(26 + t * 50);
+              // Last 2-3 bars transition to green
+              const tint = Math.max(0, (i - 26) / 3);
+              const r = Math.round(
+                t.barBase[0] + tint * (t.barGreenTip[0] - t.barBase[0]),
+              );
+              const g = Math.round(
+                t.barBase[1] + tint * (t.barGreenTip[1] - t.barBase[1]),
+              );
+              const b = Math.round(
+                t.barBase[2] + tint * (t.barGreenTip[2] - t.barBase[2]),
+              );
               return (
                 <rect
                   key={i}
@@ -224,12 +276,17 @@ export default function InvestmentGrowthPage() {
                   height={h}
                   rx={2.5}
                   fill={`rgb(${r}, ${g}, ${b})`}
+                  style={{ transition: "y 0.2s ease, height 0.2s ease" }}
                 />
               );
             })}
 
             {/* ── area fill ── */}
-            <path d={area} fill="url(#areaFill)" />
+            <path
+              d={area}
+              fill="url(#areaFill)"
+              style={{ transition: "d 0.2s ease" }}
+            />
 
             {/* ── tip glow ── */}
             <circle
@@ -255,9 +312,8 @@ export default function InvestmentGrowthPage() {
               y1={yOf(deposit)}
               x2={CR}
               y2={yOf(deposit)}
-              stroke="#fff"
+              stroke={t.depositLine}
               strokeWidth="1"
-              opacity="0.12"
             />
 
             {/* ── green line (glow layer) ── */}
@@ -282,7 +338,7 @@ export default function InvestmentGrowthPage() {
             <text
               x={CL + barStep / 2}
               y={CB + 20}
-              fill="#444"
+              fill={t.gridText}
               fontSize="11"
               textAnchor="middle"
               fontFamily="Inter, system-ui, sans-serif"
@@ -292,7 +348,7 @@ export default function InvestmentGrowthPage() {
             <text
               x={CL + (YEARS - 0.5) * barStep}
               y={CB + 20}
-              fill="#444"
+              fill={t.gridText}
               fontSize="11"
               textAnchor="middle"
               fontFamily="Inter, system-ui, sans-serif"
@@ -302,9 +358,15 @@ export default function InvestmentGrowthPage() {
           </svg>
 
           {/* ════════ SIMULATE LABEL ════════ */}
-          <p className={styles.simLabel}>
+          <p
+            className={`${styles.simLabel} ${isDark ? styles.simLabelDark : styles.simLabelLight}`}
+          >
             Simulate{" "}
-            <span className={styles.simUnderline}>one-time deposit</span>{" "}
+            <span
+              className={`${styles.simUnderline} ${isDark ? styles.simUnderlineDark : styles.simUnderlineLight}`}
+            >
+              one-time deposit
+            </span>{" "}
             <span className={styles.simChevron}>&#x25BE;</span>
           </p>
 
@@ -312,7 +374,7 @@ export default function InvestmentGrowthPage() {
           <div className={styles.sliderWrap}>
             {/* value bubble */}
             <div
-              className={styles.bubble}
+              className={`${styles.bubble} ${isDark ? styles.bubbleDark : styles.bubbleLight}`}
               style={{
                 left: `calc(${pct}% + ${(0.5 - pct / 100) * 14}px)`,
               }}
@@ -322,7 +384,7 @@ export default function InvestmentGrowthPage() {
 
             <input
               type="range"
-              className={styles.range}
+              className={`${styles.range} ${isDark ? styles.rangeDark : styles.rangeLight}`}
               min={MIN_DEP}
               max={MAX_DEP}
               step={100}
@@ -338,7 +400,7 @@ export default function InvestmentGrowthPage() {
                 return (
                   <div
                     key={i}
-                    className={styles.tick}
+                    className={`${styles.tick} ${isDark ? styles.tickDark : styles.tickLight}`}
                     style={{
                       height: isMajor ? 10 : isMid ? 7 : 4,
                       opacity: isMajor ? 0.5 : 0.2,
@@ -349,7 +411,9 @@ export default function InvestmentGrowthPage() {
             </div>
 
             {/* labels */}
-            <div className={styles.labels}>
+            <div
+              className={`${styles.labels} ${isDark ? styles.labelsDark : styles.labelsLight}`}
+            >
               {[2, 3, 4, 5, 6, 7, 8].map((k) => (
                 <span key={k}>{k}K</span>
               ))}

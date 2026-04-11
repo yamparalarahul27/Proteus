@@ -1,28 +1,53 @@
 /* ── card container ── */
 .card {
-  background: #0c0c0c;
   border-radius: 24px;
   padding: 32px 24px 28px;
   max-width: 460px;
   width: 100%;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.cardDark {
+  background: #0c0c0c;
   border: 1px solid #1a1a1a;
+}
+
+.cardLight {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* ── "Simulate …" label ── */
 .simLabel {
   text-align: center;
   margin-top: 14px;
-  color: #777;
   font-size: 14px;
   cursor: pointer;
   user-select: none;
+  transition: color 0.3s;
+}
+
+.simLabelDark {
+  color: #777;
+}
+
+.simLabelLight {
+  color: #6b7280;
 }
 
 .simUnderline {
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-style: dotted;
+}
+
+.simUnderlineDark {
   text-decoration-color: #666;
+}
+
+.simUnderlineLight {
+  text-decoration-color: #9ca3af;
 }
 
 .simChevron {
@@ -43,16 +68,26 @@
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  background: #1a1a1a;
-  border: 1px solid #333;
   border-radius: 100px;
   padding: 5px 16px;
   font-size: 14px;
-  font-weight: 500;
-  color: #fff;
+  font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
   font-family: Inter, system-ui, sans-serif;
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+
+.bubbleDark {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #fff;
+}
+
+.bubbleLight {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #111827;
 }
 
 /* ── range input ── */
@@ -61,31 +96,56 @@
   appearance: none;
   width: 100%;
   height: 2px;
-  background: #333;
   border-radius: 2px;
   outline: none;
   margin-top: 36px;
   cursor: pointer;
+  transition: background 0.3s;
+}
+
+.rangeDark {
+  background: #333;
+}
+
+.rangeLight {
+  background: #d1d5db;
 }
 
 .range::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #fff;
   cursor: pointer;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.rangeDark::-webkit-slider-thumb {
+  background: #fff;
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
+.rangeLight::-webkit-slider-thumb {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
 .range::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #fff;
   cursor: pointer;
   border: none;
+}
+
+.rangeDark::-moz-range-thumb {
+  background: #fff;
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.rangeLight::-moz-range-thumb {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
 }
 
 /* ── ruler tick marks ── */
@@ -97,7 +157,15 @@
 
 .tick {
   width: 1px;
+  transition: background 0.3s;
+}
+
+.tickDark {
   background: #fff;
+}
+
+.tickLight {
+  background: #9ca3af;
 }
 
 /* ── tick labels ── */
@@ -106,6 +174,42 @@
   justify-content: space-between;
   margin-top: 6px;
   font-size: 11px;
-  color: #555;
   font-family: Inter, system-ui, sans-serif;
+  transition: color 0.3s;
+}
+
+.labelsDark {
+  color: #555;
+}
+
+.labelsLight {
+  color: #9ca3af;
+}
+
+/* ── final value display ── */
+.finalValue {
+  text-align: center;
+  margin-top: 16px;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.finalValueAmount {
+  font-size: 28px;
+  font-weight: 700;
+  color: #22c55e;
+  transition: transform 0.15s ease;
+}
+
+.finalValueLabel {
+  font-size: 12px;
+  margin-top: 2px;
+  transition: color 0.3s;
+}
+
+.finalValueLabelDark {
+  color: #555;
+}
+
+.finalValueLabelLight {
+  color: #9ca3af;
 }
