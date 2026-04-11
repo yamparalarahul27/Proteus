@@ -194,6 +194,13 @@ const components: ComponentCard[] = [
     color: "#6366f1",
     status: "Latest",
   },
+  {
+    href: "/landthebooster",
+    title: "Land the Booster",
+    description: "Mars rocket landing game with physics sim, fuel/speed/angle HUD, keyboard + touch controls, and scoring.",
+    color: "#c4603c",
+    status: "Experience",
+  },
 ];
 
 const statusPriority: Record<NonNullable<ComponentCard["status"]>, number> = {
