@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import NumberFlow from "@number-flow/react";
 import ComponentShell from "@/components/ComponentShell";
 import styles from "./investmentgrowth.module.css";
 
@@ -138,7 +139,14 @@ export default function InvestmentGrowthPage() {
         >
           {/* ════════ FINAL VALUE ════════ */}
           <div className={styles.finalValue}>
-            <div className={styles.finalValueAmount}>{fmtFull(peak)}</div>
+            <div className={styles.finalValueAmount}>
+              <NumberFlow
+                value={Math.round(peak)}
+                format={{ style: "currency", currency: "USD", maximumFractionDigits: 0 }}
+                transformTiming={{ duration: 400, easing: "ease-out" }}
+                spinTiming={{ duration: 400, easing: "ease-out" }}
+              />
+            </div>
             <div
               className={`${styles.finalValueLabel} ${isDark ? styles.finalValueLabelDark : styles.finalValueLabelLight}`}
             >
@@ -376,10 +384,15 @@ export default function InvestmentGrowthPage() {
             <div
               className={`${styles.bubble} ${isDark ? styles.bubbleDark : styles.bubbleLight}`}
               style={{
-                left: `calc(${pct}% + ${(0.5 - pct / 100) * 14}px)`,
+                left: `calc(${pct}% + ${(0.5 - pct / 100) * 28}px)`,
               }}
             >
-              ${deposit.toLocaleString()}
+              <NumberFlow
+                value={deposit}
+                format={{ style: "currency", currency: "USD", maximumFractionDigits: 0 }}
+                transformTiming={{ duration: 250, easing: "ease-out" }}
+                spinTiming={{ duration: 250, easing: "ease-out" }}
+              />
             </div>
 
             <input
