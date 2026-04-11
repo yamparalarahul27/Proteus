@@ -201,6 +201,13 @@ const components: ComponentCard[] = [
     color: "#c4603c",
     status: "Experience",
   },
+  {
+    href: "/investmentgrowth",
+    title: "Investment Growth Chart",
+    description: "Compound growth bar chart with glowing green trend line, interactive deposit slider, and dynamic y-axis.",
+    color: "#22c55e",
+    status: "Latest",
+  },
 ];
 
 const statusPriority: Record<NonNullable<ComponentCard["status"]>, number> = {
