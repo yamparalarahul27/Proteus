@@ -102,16 +102,34 @@
   cursor: pointer;
   touch-action: none;
   transition: background 0.3s;
-  padding: 12px 0;
-  box-sizing: content-box;
-  background-clip: content-box;
+  padding: 0;
+  background: transparent;
 }
 
-.rangeDark {
+.range::-webkit-slider-runnable-track {
+  height: 1.5px;
+  border-radius: 1px;
+}
+
+.rangeDark::-webkit-slider-runnable-track {
   background: #333;
 }
 
-.rangeLight {
+.rangeLight::-webkit-slider-runnable-track {
+  background: #d1d5db;
+}
+
+.range::-moz-range-track {
+  height: 1.5px;
+  border-radius: 1px;
+  border: none;
+}
+
+.rangeDark::-moz-range-track {
+  background: #333;
+}
+
+.rangeLight::-moz-range-track {
   background: #d1d5db;
 }
 
