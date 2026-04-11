@@ -107,8 +107,8 @@
 }
 
 .range::-webkit-slider-runnable-track {
-  height: 1.5px;
-  border-radius: 1px;
+  height: 4px;
+  border-radius: 2px;
 }
 
 .rangeDark::-webkit-slider-runnable-track {
@@ -120,8 +120,8 @@
 }
 
 .range::-moz-range-track {
-  height: 1.5px;
-  border-radius: 1px;
+  height: 4px;
+  border-radius: 2px;
   border: none;
 }
 
