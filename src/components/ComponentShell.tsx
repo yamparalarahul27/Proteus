@@ -38,7 +38,7 @@ export default function ComponentShell({
     <div
       className={`
         min-h-screen flex flex-col transition-colors
-        ${isDark ? "bg-[#0f1117]" : "bg-[var(--background)]"}
+        ${isDark ? "bg-[#0f1117] theme-dark" : "bg-[var(--background)]"}
       `}
     >
       {/* Header */}
