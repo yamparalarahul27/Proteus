@@ -26,5 +26,4 @@ export const componentNavLinks: Array<{ href: string; label: string }> = [
   { href: "/canvasgallery", label: "Canvas Gallery" },
   { href: "/landthebooster", label: "Land the Booster" },
   { href: "/investmentgrowth", label: "Investment Growth Chart" },
-  { href: "/beforeafter", label: "Before & After" },
 ];
