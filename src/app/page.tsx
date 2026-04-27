@@ -208,6 +208,13 @@ const components: ComponentCard[] = [
     color: "#22c55e",
     status: "Latest",
   },
+  {
+    href: "/beforeafter",
+    title: "Before & After",
+    description: "Image comparison slider with draggable divider, clip-based reveal, and hover labels. Credit: @raunofreiberg.",
+    color: "#111827",
+    status: "Latest",
+  },
 ];
 
 const statusPriority: Record<NonNullable<ComponentCard["status"]>, number> = {
